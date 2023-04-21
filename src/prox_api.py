@@ -24,44 +24,55 @@ response = proxmox.get("/api2/json/nodes/pve2/qemu/102")
 
 node = proxmox.nodes("pve2")
 
-storage = node.storage('StorageLocal2').
+# response = node.storage('StorageLocal2').content.post(filename="vm-200-disk-0",
+#                                                       node="pve2",
+#                                                       size="32G",
+#                                                       storage="StorageLocal2",
+#                                                       vmid=200)
 
-# node.qemu.post(
-#     # options
-#     vmid=200,
-#     acpi=1,
-#     autostart=1,
-#     ostype="l26",
-#     boot="order=scsi0;ide2;net0",
-#     tablet=1,
-#     hotplug="disk,network,usb",
-#     kvm=1,
-#     freeze=0,
-#     localtime=1,
-#     smbios1="uuid=" + str(uuid.uuid4()),
-#     agent=0,
-#     protection=0,
-#     spice_enhancements="videostreaming=off,foldersharing=0",
-#     vmstatestorage="automatic",
-#     #  hardware
-#     memory=4096,
-#     cores=2,
-#     sockets=2,
-#     bios="seabios",
-#     machine="pc-i440fx-0.0",
-#     scsihw="virtio-scsi-pci",
-#     ide2="file=local:iso/ubuntu-20.04.4-live-server-amd64.iso,size=1270M",
-#     scsi0="StorageLocal2:vm-200-disk-0,size=32G",
-#     net0="model=virtio,bridge=vmbr0,firewall=1")
+# print(response)
+
+storage = node.storage('StorageLocal2').get("content")
+
+for item in storage:
+    print(item, '\n')
+
+node.qemu.post(
+    # options
+    vmid=200,
+    acpi=1,
+    autostart=1,
+    ostype="l26",
+    boot="order=scsi0;ide2;net0",
+    tablet=1,
+    hotplug="disk,network,usb",
+    kvm=1,
+    freeze=0,
+    localtime=1,
+    smbios1="uuid=" + str(uuid.uuid4()),
+    agent=0,
+    protection=0,
+    spice_enhancements="videostreaming=off,foldersharing=0",
+    vmstatestorage="automatic",
+    #  hardware
+    memory=4096,
+    cores=2,
+    sockets=2,
+    bios="seabios",
+    machine="pc-i440fx-0.0",
+    scsihw="virtio-scsi-pci",
+    ide2="file=local:iso/ubuntu-20.04.4-live-server-amd64.iso,size=1270M",
+    scsi0="StorageLocal2:vm-200-disk-0,size=32G",
+    net0="model=virtio,bridge=vmbr0,firewall=1")
 
 
-for it in node.qemu.get():
-    for i in it:
-        print(i, it[i])
-    print()
+# for it in node.qemu.get():
+#     for i in it:
+#         print(i, it[i])
+#     print()
 
 
-for node in proxmox.nodes.get():
-    for vm in proxmox.nodes(node["node"]).qemu.get():
-        print(
-            f"Node: {node['node']} \t ID: {vm['vmid']} \t Name: {vm['name']} => {vm['status']}")
+# for node in proxmox.nodes.get():
+#     for vm in proxmox.nodes(node["node"]).qemu.get():
+#         print(
+#             f"Node: {node['node']} \t ID: {vm['vmid']} \t Name: {vm['name']} => {vm['status']}")
