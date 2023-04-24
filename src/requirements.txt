@@ -1,3 +1,4 @@
 proxmoxer==2.0.1
 requests==2.28.2
 urllib3==1.26.12
+environs==9.5.0

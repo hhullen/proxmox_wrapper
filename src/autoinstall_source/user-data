@@ -1,0 +1,23 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  identity:
+    hostname: ubuntu
+    password: $1$d2t5SfSv$r.HxFplqlMFIqRLCwM5UQ0
+    username: ubuntu
+  refresh-installer:
+    update: no
+  storage:
+    layout:
+      name: lvm
+  ssh:
+    install-server: false
+  early-commands:
+    - grep -v GRUB_CMDLINE_LINUX /etc/default/grub > /etc/default/grub2
+    - mv /etc/default/grub2 /etc/default/grub
+    - echo 'GRUB_CMDLINE_LINUX=" autoinstall"' >> /etc/default/grub
+    - echo 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash autoinstall"' >> /etc/default/grub
+    - mkdir /cow
+    - update-grub
+    - cat /proc/cmdline
