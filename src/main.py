@@ -36,6 +36,7 @@ def init_modes(proxmox: WrappedProxmoxAPI):
     modes["stop"] = proxmox.stop
     modes["reboot"] = proxmox.reboot
     modes["config"] = proxmox.configurate
+    modes["status"] = proxmox.status
     return modes
 
 

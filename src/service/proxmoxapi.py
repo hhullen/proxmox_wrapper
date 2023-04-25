@@ -97,6 +97,17 @@ class WrappedProxmoxAPI:
         response = self.proxmox.nodes(node).qemu(vmid).status.post("reset")
         logging.info(f"Reboot machine: {response}")
 
+    def status(self, node, vmid):
+        response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
+        print(f" QEMU process status:\t{response['status']}\n",
+              f"VM name:\t\t{response['name']}\n",
+              f"VM name:\t\t{response['vmid']}\n",
+              f"Uptime:\t\t{response['uptime']}\n",
+              f"Maximum usable CPUs:\t{response['cpus']}\n",
+              f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}\n",
+              f"Maximum memory, MB:\t{int(response['maxmem']) / 1024 / 1024}\n",
+              f"Root disk size, MB:\t{int(response['maxdisk']) / 1024 / 1024}")
+
     def _is_vm_exists(self, node, vmid) -> bool:
         response = self.proxmox.nodes(node).qemu.get()
         for mv in response:
