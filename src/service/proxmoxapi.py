@@ -100,10 +100,12 @@ class WrappedProxmoxAPI:
 
     def status(self, node, vmid):
         response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
+        uptime = datetime.fromtimestamp(
+            int(response['uptime'])) - datetime.fromtimestamp(0)
         print(f" QEMU process status:\t{response['status']}\n",
               f"VM name:\t\t{response['name']}\n",
               f"VM name:\t\t{response['vmid']}\n",
-              f"Uptime:\t\t{datetime.fromtimestamp(int(response['uptime']))}\n",
+              f"Uptime:\t\t{uptime}\n",
               f"Maximum usable CPUs:\t{response['cpus']}\n",
               f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}\n",
               f"Maximum memory, MB:\t{int(response['maxmem']) / 1024 / 1024}\n",
