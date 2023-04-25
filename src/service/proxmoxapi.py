@@ -3,6 +3,7 @@ from configuration import Config
 import urllib3
 import logging
 import time
+from datetime import datetime
 
 
 class WrappedProxmoxAPI:
@@ -102,7 +103,7 @@ class WrappedProxmoxAPI:
         print(f" QEMU process status:\t{response['status']}\n",
               f"VM name:\t\t{response['name']}\n",
               f"VM name:\t\t{response['vmid']}\n",
-              f"Uptime:\t\t{response['uptime']}\n",
+              f"Uptime:\t\t{datetime.fromtimestamp(int(response['uptime']))}\n",
               f"Maximum usable CPUs:\t{response['cpus']}\n",
               f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}\n",
               f"Maximum memory, MB:\t{int(response['maxmem']) / 1024 / 1024}\n",
