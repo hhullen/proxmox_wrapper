@@ -5,8 +5,6 @@ class Config:
     def __init__(self, path: str) -> None:
         env: Env = Env()
         env.read_env(path)
-        self.node: str = env("NODE")
-        self.vmid: str = env("VMID")
         self.name: str = env("NAME")
         self.ostype: str = env("OS_TYPE")
         self.ram: str = env("RAM_MEMORY")

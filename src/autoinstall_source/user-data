@@ -19,5 +19,4 @@ autoinstall:
     - echo 'GRUB_CMDLINE_LINUX=" autoinstall"' >> /etc/default/grub
     - echo 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash autoinstall"' >> /etc/default/grub
     - mkdir /cow
-    - update-grub
-    - cat /proc/cmdline
+    - sudo update-grub
