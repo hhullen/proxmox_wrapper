@@ -32,7 +32,7 @@ class WrappedProxmoxAPI:
                                      cores=cfg.cores,
                                      sockets=cfg.sockets,
                                      ide1=f"file={cfg.ide1},media=cdrom,size={cfg.size_ide1}",
-                                     ide2=f"file={cfg.ide2},media=cdrom,size={cfg.size_ide2}",
+                                     ide0=f"file={cfg.ide2},media=cdrom,size={cfg.size_ide2}",
                                      scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_storage}",
                                      net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}")
             logging.info(f"Configurated machine: {response}")
@@ -52,20 +52,20 @@ class WrappedProxmoxAPI:
                 acpi=1,
                 autostart=1,
                 ostype=cfg.ostype,
-                boot="order=scsi0;ide1;ide2;net0",
+                boot="order=scsi0;ide0;ide1;net0",
                 tablet=1,
                 hotplug="disk,network,usb",
                 freeze=0,
                 localtime=1,
-                agent=0,
+                agent=1,
                 protection=0,
                 vmstatestorage="automatic",
                 #  hardware
                 memory=cfg.ram,
                 cores=cfg.cores,
                 sockets=cfg.sockets,
-                ide1=f"file={cfg.ide1},media=cdrom,size={cfg.size_ide1}",
-                ide2=f"file={cfg.ide2},media=cdrom,size={cfg.size_ide2}",
+                ide1=f"file={cfg.ide1},media=cdrom",
+                ide0=f"file={cfg.ide2},media=cdrom",
                 scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_storage}",
                 net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}",
                 scsihw="virtio-scsi-pci")
@@ -128,13 +128,22 @@ class WrappedProxmoxAPI:
         response = self.proxmox.nodes(node).qemu(vmid).status.post("reset")
         logging.info(f"Reboot machine: {response}")
 
+    def rebuild(self, **vm):
+        node = vm.get("node")
+        vmid = vm.get("vmid")
+        self.delete(node=node, vmid=vmid)
+        time.sleep(2)
+        self.create(node=node, vmid=vmid)
+
     def status(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
         response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
         uptime = datetime.fromtimestamp(
             int(response['uptime'])) - datetime.fromtimestamp(0)
-        print(f" QEMU process status:\t{response['status']}\n",
+        status = f"{response['status']} LOCKED" if response.get(
+            'lock') else response['status']
+        print(f" QEMU process status:\t{status}\n",
               f"VM name:\t\t{response['name']}\n",
               f"VM name:\t\t{response['vmid']}\n",
               f"Uptime:\t\t{uptime}\n",
@@ -142,8 +151,6 @@ class WrappedProxmoxAPI:
               f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}\n",
               f"Maximum memory, MB:\t{int(response['maxmem']) / 1024 / 1024}\n",
               f"Root disk size, MB:\t{int(response['maxdisk']) / 1024 / 1024}")
-
-        print(response, '\n')
 
     def _is_vm_exists(self, node, vmid) -> bool:
         response = self.proxmox.nodes(node).qemu.get()

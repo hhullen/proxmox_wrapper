@@ -44,6 +44,7 @@ def init_modes(proxmox: WrappedProxmoxAPI):
     modes["config"] = proxmox.configurate
     modes["status"] = proxmox.status
     modes["clone"] = proxmox.clone
+    modes["rebuild"] = proxmox.rebuild
     return modes
 
 
@@ -63,9 +64,9 @@ def main():
 
 
 if __name__ == "__main__":
-    # try:
-    logging.basicConfig(level=logging.INFO,
-                        format='\033[33m%(levelname)s\033[0m: %(message)s')
-    main()
-    # except BaseException as ex:
-    #     logging.error(ex)
+    try:
+        logging.basicConfig(level=logging.INFO,
+                            format='\033[33m%(levelname)s\033[0m: %(message)s')
+        main()
+    except BaseException as ex:
+        logging.error(ex)

@@ -3,8 +3,8 @@ autoinstall:
   version: 1
   locale: en_US.UTF-8
   identity:
-    hostname: ubuntu
-    password: $1$d2t5SfSv$r.HxFplqlMFIqRLCwM5UQ0
+    hostname: ubuntu-host
+    password: '$y$j9T$1fDANh79eszOR.FUqB.0k/$ZsiHDWAreH4t98BX48H.BuMKzaELFDUPLt739wrE066'
     username: ubuntu
   refresh-installer:
     update: no
@@ -14,11 +14,6 @@ autoinstall:
   ssh:
     install-server: false
   early-commands:
-    - grep -v GRUB_CMDLINE_LINUX /etc/default/grub > /etc/default/grub2
-    - mv /etc/default/grub2 /etc/default/grub
-    - echo 'GRUB_CMDLINE_LINUX=" autoinstall"' >> /etc/default/grub
-    - echo 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash autoinstall"' >> /etc/default/grub
-    - cat /etc/default/grub
-    - mkdir /cow
-    - update-grub
-    - cat /proc/cmdline | grep -v autoinstall && reboot
+    - cat /proc/cmdline
+  late-commands:
+    - curtin in-target --target=/target -- mkdir -p /home/custom && echo sparta > this_is.txt
