@@ -145,7 +145,7 @@ class WrappedProxmoxAPI:
             'lock') else response['status']
         print(f" QEMU process status:\t{status}\n",
               f"VM name:\t\t{response['name']}\n",
-              f"VM name:\t\t{response['vmid']}\n",
+              f"VM id:\t\t\t{response['vmid']}\n",
               f"Uptime:\t\t{uptime}\n",
               f"Maximum usable CPUs:\t{response['cpus']}\n",
               f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}\n",

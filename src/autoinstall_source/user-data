@@ -4,7 +4,7 @@ autoinstall:
   locale: en_US.UTF-8
   identity:
     hostname: ubuntu-host
-    password: '$y$j9T$1fDANh79eszOR.FUqB.0k/$ZsiHDWAreH4t98BX48H.BuMKzaELFDUPLt739wrE066'
+    password: 'Fghtkm2023\!\!'
     username: ubuntu
   refresh-installer:
     update: no
@@ -15,5 +15,6 @@ autoinstall:
     install-server: false
   early-commands:
     - cat /proc/cmdline
+    - cat /autoinstall.yaml
   late-commands:
     - curtin in-target --target=/target -- mkdir -p /home/custom && echo sparta > this_is.txt
