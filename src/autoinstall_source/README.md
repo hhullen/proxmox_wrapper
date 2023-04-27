@@ -176,3 +176,4 @@ Outputed `ubuntu-autoinstall.iso` image has kernel command line fix and is boota
 - [Automated Server installation](https://ubuntu.com/server/docs/install/autoinstall)
 - [Automated Server install quickstart](https://ubuntu.com/server/docs/install/autoinstall-quickstart)
 - [Automated Server installer config file reference](ttps://ubuntu.com/server/docs/install/autoinstall-reference)
+
