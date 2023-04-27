@@ -1,5 +1,5 @@
 from proxmoxer import ProxmoxAPI
-from configuration import Config
+from configuration import Config, config_path
 import urllib3
 import logging
 import time
@@ -23,7 +23,7 @@ class WrappedProxmoxAPI:
     def configurate(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        cfg = Config("configuration/vmsetup.cfg")
+        cfg = Config(config_path)
         if self._is_vm_exists(node, vmid):
             vmconfig = self.proxmox.nodes(node).qemu(vmid).config
             response = vmconfig.post(name=cfg.name,
@@ -42,7 +42,7 @@ class WrappedProxmoxAPI:
     def create(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        cfg = Config("configuration/vmsetup.cfg")
+        cfg = Config(config_path)
         self._create_storage(cfg, node, vmid)
         if not self._is_vm_exists(node, vmid):
             response = self.proxmox.nodes(node).qemu.post(

@@ -30,6 +30,10 @@ To create required image use command:
 ```
 cloud-localds ubuntu_autounstall.iso user-data meta-data
 ```
+Or
+```
+bash create_image.sh
+```
 This creates `ubuntu_autounstall.iso` from those two files.
 > The image need to be added as optical drive beside installation image and their order does not matter.
 

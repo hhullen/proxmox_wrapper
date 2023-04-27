@@ -1,4 +1,31 @@
 from environs import Env
+import os
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format='\033[33m%(levelname)s\033[0m: %(message)s')
+
+
+config_path = f"/home/{os.getenv('USER')}/.proxapi/vmsetup.cfg"
+
+
+try:
+    PASSWORD = os.environ['PROX_PASS']
+except:
+    logging.error(
+        "Enter a password to ProxmoxVE connection as environment "
+        "variable: export PROX_PASS='your_pass_word'")
+    exit()
+
+try:
+    env: Env = Env()
+    env.read_env(config_path)
+    HOST = env("HOST")
+    USER = env("USER_NAME")
+except:
+    logging.error("Can not read configuration file for HOST and USER field."
+                  "Try to run bash configure.sh from src folder in source code directory.")
+    exit()
 
 
 class Config:

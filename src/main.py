@@ -1,10 +1,18 @@
 from service import WrappedProxmoxAPI, init_modes, read_args
+from configuration import HOST, USER
 import logging
 import os
 
-PASSWORD = os.environ['PROX_PASS']
-HOST = "10.10.31.11"
-USER = "root@pam"
+logging.basicConfig(level=logging.INFO,
+                    format='\033[33m%(levelname)s\033[0m: %(message)s')
+
+try:
+    PASSWORD = os.environ['PROX_PASS']
+except:
+    logging.error(
+        "Enter a password to ProxmoxVE connection as environment "
+        "variable: export PROX_PASS='your_pass_word'")
+    exit()
 
 
 def main():
@@ -24,8 +32,6 @@ def main():
 
 if __name__ == "__main__":
     try:
-        logging.basicConfig(level=logging.INFO,
-                            format='\033[33m%(levelname)s\033[0m: %(message)s')
         main()
     except BaseException as ex:
         logging.error(ex)
