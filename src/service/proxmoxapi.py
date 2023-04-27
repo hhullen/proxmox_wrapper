@@ -138,19 +138,27 @@ class WrappedProxmoxAPI:
     def status(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
+        if vmid == "all":
+            ids = self._get_node_vm_list(node)
+            for id in ids:
+                self._print_vm_status(node, id)
+        else:
+            self._print_vm_status(node, vmid)
+
+    def _print_vm_status(self, node, vmid):
         response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
         uptime = datetime.fromtimestamp(
             int(response['uptime'])) - datetime.fromtimestamp(0)
         status = f"{response['status']} LOCKED" if response.get(
             'lock') else response['status']
-        print(f" QEMU process status:\t{status}\n",
+        print(f" VM id:\t\t\t{response['vmid']}\n",
+              f"QEMU process status:\t{status}\n",
               f"VM name:\t\t{response['name']}\n",
-              f"VM id:\t\t\t{response['vmid']}\n",
               f"Uptime:\t\t{uptime}\n",
               f"Maximum usable CPUs:\t{response['cpus']}\n",
               f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}\n",
               f"Maximum memory, MB:\t{int(response['maxmem']) / 1024 / 1024}\n",
-              f"Root disk size, MB:\t{int(response['maxdisk']) / 1024 / 1024}")
+              f"Root disk size, MB:\t{int(response['maxdisk']) / 1024 / 1024}\n")
 
     def _is_vm_exists(self, node, vmid) -> bool:
         response = self.proxmox.nodes(node).qemu.get()
@@ -188,14 +196,21 @@ class WrappedProxmoxAPI:
                 vmid).status.get("current")
 
     def _get_new_id(self, start):
-        ids = []
         nodes = self.proxmox.get("nodes")
-        for node in nodes:
-            qemus = self.proxmox.nodes(node['node']).qemu.get()
-            for qemu in qemus:
-                ids.append(qemu['vmid'])
-
+        ids: list = self._get_all_vm_list(nodes)
         while start in ids:
             start += 1
-
         return start
+
+    def _get_all_vm_list(self, nodes) -> list:
+        ids: list = []
+        for node in nodes:
+            ids += self._get_node_vm_list(node['node'])
+        return ids
+
+    def _get_node_vm_list(self, node) -> list:
+        ids: list = []
+        qemus = self.proxmox.nodes(node).qemu.get()
+        for qemu in qemus:
+            ids.append(qemu['vmid'])
+        return ids
