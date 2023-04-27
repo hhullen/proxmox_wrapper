@@ -11,8 +11,9 @@ autoinstall:
   version: 1
   locale: en_US.UTF-8
   identity:
+    realname: ubuntu
     hostname: ubuntu-host
-    password: some_password
+    password: 'some_password'
     username: ubuntu
   refresh-installer:
     update: no
@@ -24,6 +25,7 @@ autoinstall:
   late-commands:
     - curtin in-target --target=/target -- sudo apt update && sudo apt upgrade
 ```
+> Note the password has to be encrypted. Several tools can generate the crypted password, such as mkpasswd from the whois package, or openssl passwd. Depending on the special characters in the password hash, quoting may be required, so it’s safest to just always include the quotes around the hash.
 Learn more about command lists at [Automated Server installer config file reference](ttps://ubuntu.com/server/docs/install/autoinstall-reference)
 
 To create required image use command:

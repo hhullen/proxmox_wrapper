@@ -2,10 +2,10 @@
 autoinstall:
   version: 1
   identity:
-    realname: maksim
+    realname: ubuntu
     hostname: ubuntu-host
     password: "$1$r6RkYJRy$dpxT9aD/TQUIXfTMcOROH0"
-    username: maksim
+    username: ubuntu
   locale: en_US.UTF-8
   refresh-installer:
     update: no
@@ -18,4 +18,4 @@ autoinstall:
     - cat /proc/cmdline
     - cat /autoinstall.yaml
   late-commands:
-    - curtin in-target --target=/target -- useradd -d /home/aboba -G sudo -p "student" aboba && mkdir -p /home/custom && echo sparta > this_is.txt
+    - curtin in-target --target=/target -- mkdir -p /home/custom && echo sparta > this_is.txt
