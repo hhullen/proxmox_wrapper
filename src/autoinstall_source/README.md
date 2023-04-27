@@ -175,5 +175,5 @@ Outputed `ubuntu-autoinstall.iso` image has kernel command line fix and is boota
 - [How to customize the Ubuntu Live CD?](https://askubuntu.com/questions/48535/how-to-customize-the-ubuntu-live-cd)
 - [Automated Server installation](https://ubuntu.com/server/docs/install/autoinstall)
 - [Automated Server install quickstart](https://ubuntu.com/server/docs/install/autoinstall-quickstart)
-- [Automated Server installer config file reference](ttps://ubuntu.com/server/docs/install/autoinstall-reference)
+- [Automated Server installer config file reference](https://ubuntu.com/server/docs/install/autoinstall-reference)
 
