@@ -20,12 +20,16 @@ except:
 try:
     env: Env = Env()
     env.read_env(config_path)
-    HOST = env("HOST")
+    HOST = env("PROXMOX_HOST")
     USER = env("USER_NAME")
 except:
     logging.error("Can not read configuration file for HOST and USER field."
                   "Try to run bash configure.sh from src folder in source code directory.")
     exit()
+
+
+def valid(var, alt):
+    return var if var else alt
 
 
 class Config:
@@ -41,7 +45,16 @@ class Config:
         self.ide2: str = env("IDE2")
         self.size_ide1: str = env("SIZE_IDE1")
         self.size_ide2: str = env("SIZE_IDE2")
-        self.vm_storage: str = env("VM_STORAGE")
+        self.vm_disk_size: str = env("VM_DISK_SIZE")
         self.node_storage_name: str = env("NODE_STORAGE_NAME")
         self.brigde: str = env("BRIDGE")
         self.firewall: str = env("FIREWALL")
+
+    def update_from_args(self, args: dict[str, any]):
+        self.name = valid(args.get("vmname"), self.name)
+        self.ram = valid(args.get("ram"), self.ram)
+        self.sockets = valid(args.get("sockets"), self.sockets)
+        self.cores = valid(args.get("cores"), self.cores)
+        self.vm_disk_size = valid(args.get("disksize"), self.vm_disk_size)
+        self.node_storage_name = valid(
+            args.get("storagename"), self.node_storage_name)

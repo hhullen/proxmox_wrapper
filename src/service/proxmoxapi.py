@@ -1,13 +1,9 @@
 from proxmoxer import ProxmoxAPI
-from configuration import Config, config_path
+from configuration import Config, config_path, valid
 import urllib3
 import logging
 import time
 from datetime import datetime
-
-
-def valid(var, alt):
-    return var if var else alt
 
 
 class WrappedProxmoxAPI:
@@ -24,6 +20,7 @@ class WrappedProxmoxAPI:
         node = vm.get("node")
         vmid = vm.get("vmid")
         cfg = Config(config_path)
+        cfg.update_from_args(vm)
         if self._is_vm_exists(node, vmid):
             vmconfig = self.proxmox.nodes(node).qemu(vmid).config
             response = vmconfig.post(name=cfg.name,
@@ -33,7 +30,7 @@ class WrappedProxmoxAPI:
                                      sockets=cfg.sockets,
                                      ide1=f"file={cfg.ide1},media=cdrom,size={cfg.size_ide1}",
                                      ide0=f"file={cfg.ide2},media=cdrom,size={cfg.size_ide2}",
-                                     scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_storage}",
+                                     scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G",
                                      net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}")
             logging.info(f"Configurated machine: {response}")
         else:
@@ -43,6 +40,7 @@ class WrappedProxmoxAPI:
         node = vm.get("node")
         vmid = vm.get("vmid")
         cfg = Config(config_path)
+        cfg.update_from_args(vm)
         self._create_storage(cfg, node, vmid)
         if not self._is_vm_exists(node, vmid):
             response = self.proxmox.nodes(node).qemu.post(
@@ -64,9 +62,9 @@ class WrappedProxmoxAPI:
                 memory=cfg.ram,
                 cores=cfg.cores,
                 sockets=cfg.sockets,
-                ide1=f"file={cfg.ide1},media=cdrom",
                 ide0=f"file={cfg.ide2},media=cdrom",
-                scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_storage}",
+                ide1=f"file={cfg.ide1},media=cdrom",
+                scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G",
                 net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}",
                 scsihw="virtio-scsi-pci")
             logging.info(f"Created machine: {response}")
@@ -169,23 +167,34 @@ class WrappedProxmoxAPI:
 
     def _create_storage(self, cfg: Config, node, vmid):
         new_disk_name: str = f"vm-{vmid}-disk-0"
-        disks: list = self.proxmox.nodes(node).storage(
-            cfg.node_storage_name).get("content")
-
-        disks = list(map(lambda name: name['volid'].strip(
-            f"{cfg.node_storage_name}:"), disks))
-
-        if list(filter(lambda name: name == new_disk_name, disks)):
+        if self._is_disk_exists(cfg, new_disk_name, node):
             return
 
         storage = self.proxmox.nodes(node).storage(cfg.node_storage_name)
 
         response = storage.content.post(filename=f"vm-{vmid}-disk-0",
                                         node=node,
-                                        size=cfg.vm_storage,
+                                        size=f"{cfg.vm_disk_size}G",
                                         storage=cfg.node_storage_name,
                                         vmid=vmid)
         logging.info(f"Created disk: {new_disk_name}. {response}")
+
+    def delete_storage(self, cfg: Config, node, vmid):
+        disk_name: str = f"vm-{vmid}-disk-0"
+        if self._is_disk_exists(cfg, disk_name, node):
+            storage = self.proxmox.nodes(node).storage(cfg.node_storage_name)
+            response = storage.content(disk_name).delete(node=node,
+                                                         volume=vmid)
+            logging.info(f"Deleted disk: {disk_name}. {response}")
+
+    def _is_disk_exists(self, cfg: Config, new_disk_name, node) -> bool:
+        disks: list = self.proxmox.nodes(node).storage(
+            cfg.node_storage_name).get("content")
+
+        disks = list(map(lambda name: name['volid'].strip(
+            f"{cfg.node_storage_name}:"), disks))
+
+        return len(list(filter(lambda name: name == new_disk_name, disks))) > 0
 
     def _wait_termination(self, node: str, vmid: str, timeout: int):
         response = self.proxmox.nodes(node).qemu(vmid).status.get("current")

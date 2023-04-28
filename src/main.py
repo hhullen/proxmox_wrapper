@@ -1,18 +1,9 @@
 from service import WrappedProxmoxAPI, init_modes, read_args
-from configuration import HOST, USER
+from configuration import HOST, USER, PASSWORD
 import logging
-import os
 
 logging.basicConfig(level=logging.INFO,
                     format='\033[33m%(levelname)s\033[0m: %(message)s')
-
-try:
-    PASSWORD = os.environ['PROX_PASS']
-except:
-    logging.error(
-        "Enter a password to ProxmoxVE connection as environment "
-        "variable: export PROX_PASS='your_pass_word'")
-    exit()
 
 
 def main():
@@ -23,8 +14,14 @@ def main():
     if modes.get(args.mode):
         modes[args.mode](node=args.node,
                          vmid=args.id,
-                         clonename=args.clonename,
-                         startid=args.startid)
+                         clonename=args.clone_name,
+                         startid=args.startid,
+                         vmname=args.vm_name,
+                         ram=args.ram,
+                         sockets=args.sockets,
+                         cores=args.cores,
+                         disksize=args.vm_disk_size,
+                         storagename=args.node_storage_name)
     else:
         raise BaseException(
             "Wrong mode specified. Available: [create/delete/start/stop/reboot/config/status/clone]")

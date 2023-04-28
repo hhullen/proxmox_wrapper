@@ -1,1 +1,1 @@
-from .config import Config, config_path, HOST, USER
+from .config import Config, config_path, valid, HOST, USER, PASSWORD

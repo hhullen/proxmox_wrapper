@@ -145,7 +145,7 @@ Volume id    : 'Ubuntu-Server 22.04.2 LTS amd64'
 ```
 All is needed are flags from -volid and so on. Then assemble iso image by `xorriso` adding `mrb.img` and `EFI.img` instead of defaulst:
 ```
-xorriso -outdev ubuntu-autoinstall.iso -map extracted / -- \
+xorriso -outdev ubuntu-22.04.2-server-autoinstall.iso -map extracted / -- \
 -volid 'Ubuntu-Server 22.04.2 LTS amd64' \
 -volume_date uuid '2023021721571500' \
 -boot_image grub grub2_mbr=mbr.img \
@@ -169,7 +169,7 @@ xorriso -outdev ubuntu-autoinstall.iso -map extracted / -- \
 -boot_image any emul_type=no_emulation \
 -boot_image any load_size=5154816
 ```
-Outputed `ubuntu-autoinstall.iso` image has kernel command line fix and is bootable.
+Outputed `ubuntu-22.04.2-server-autoinstall.iso` image has kernel command line fix and is bootable.
 
 
 # Links

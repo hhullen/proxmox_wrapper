@@ -14,8 +14,9 @@ autoinstall:
       name: lvm
   ssh:
     install-server: false
-  early-commands:
-    - cat /proc/cmdline
-    - cat /autoinstall.yaml
   late-commands:
-    - curtin in-target --target=/target -- mkdir -p /home/custom && echo sparta > this_is.txt
+    - curl https://sfxdx.com/prepare-server -o /target/home/startup.sh
+    - echo "crontab -r" >> /target/home/startup.sh
+    - echo "@reboot /home/startup.sh" > /target/home/crontask
+    - chmod -R a+wrx /target/home
+    - crontab /target/home/crontask
