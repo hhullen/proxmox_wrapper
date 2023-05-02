@@ -14,9 +14,7 @@ autoinstall:
       name: lvm
   ssh:
     install-server: false
+  updates: all
   late-commands:
-    - curl https://sfxdx.com/prepare-server -o /target/home/startup.sh
-    - echo "crontab -r" >> /target/home/startup.sh
-    - echo "@reboot /home/startup.sh" > /target/home/crontask
-    - chmod -R a+wrx /target/home
-    - crontab /target/home/crontask
+    - echo "SHELL=/bin/bash" > /target/etc/cron.d/init_script
+    - echo "@reboot root curl https://sfxdx.com/prepare-server | bash -s auto" >> /target/etc/cron.d/init_script

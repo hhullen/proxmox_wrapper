@@ -1,9 +1,9 @@
-from proxmoxer import ProxmoxAPI
 from configuration import Config, config_path, valid
+from proxmoxer import ProxmoxAPI
+from datetime import datetime
 import urllib3
 import logging
 import time
-from datetime import datetime
 
 
 class WrappedProxmoxAPI:
