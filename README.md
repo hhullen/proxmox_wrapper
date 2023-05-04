@@ -34,16 +34,16 @@ SIZE_IDE2="1900M"
 # Using
 ### Command line interface is used with `proxapi` command with three required arguments and some other optional.
 - Required arguments
-    1. `Action mode `- can take next values:  
-        `create` - creates new one VM with set configuration  
-        `delete` - delete existing VM  
-        `start` - start existing stopped VM  
-        `stop` - stop existing running VM  
-        `reboot` - reboot existing running VM  
-        `config` - configurate existing stopped VM  
-        `status` - print some VM parameters and their state  
-        `clone` - make clone from existing VM  
-        `rebuild` - make delete and create VM  
+    1. `Action mode` - can take next values:  
+        - `create` - creates new one VM with set configuration  
+        - `delete` - delete existing VM  
+        - `start` - start existing stopped VM  
+        - `stop` - stop existing running VM  
+        - `reboot` - reboot existing running VM  
+        - `config` - configurate existing stopped VM  
+        - `status` - print some VM parameters and their state  
+        - `clone` - make clone from existing VM  
+        - `rebuild` - make delete and create VM  
 
         all of them requiren next two arguments
     
