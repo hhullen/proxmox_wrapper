@@ -3,6 +3,7 @@
 
 mask=24
 ip="10.10.15.0"
+last_byte="253"
 config=/target/etc/netplan/00-installer-config.yaml
 
 if [[ -n $1 ]]; then
@@ -31,4 +32,4 @@ function set_address() {
   echo "  renderer: networkd"
 }
 
-set_address "$p1" "$p2" "$p3" "253" "$mask" > $config
+set_address "$p1" "$p2" "$p3" "$last_byte" "$mask" > $config

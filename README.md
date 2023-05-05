@@ -1,5 +1,5 @@
 # ProxmoxAPI Command Line Interface
-Proxmox wrapper on `proxmoxer` Python library. Implements a simple command line interface to manage vitrual machines on Proxmox cluster.
+Proxmox wrapper on `proxmoxer` Python library. Implements a simple command line interface to manage vitrual machines on Proxmox cluster. `Written predominantly for Linux`.
 
 # Initial setting
 > To setup configuration installed `Python3` is required.
