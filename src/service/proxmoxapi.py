@@ -194,7 +194,7 @@ class WrappedProxmoxAPI:
         disks = list(map(lambda name: name['volid'].strip(
             f"{cfg.node_storage_name}:"), disks))
 
-        return len(list(filter(lambda name: name == new_disk_name, disks))) > 0
+        return len(list(filter(lambda name: f"vm-{name}" == new_disk_name, disks))) > 0
 
     def _wait_termination(self, node: str, vmid: str, timeout: int):
         response = self.proxmox.nodes(node).qemu(vmid).status.get("current")

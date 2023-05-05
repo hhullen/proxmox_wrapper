@@ -14,3 +14,8 @@ autoinstall:
       name: lvm
   ssh:
     install-server: false
+  late-commands:
+    - echo "10.10.31.0 24" > /target/root/autoinit/address
+    - bash /target/root/autoinit/init_address `cat /target/root/autoinit/address`
+    - echo "@reboot root /bin/bash /root/autoinit/init_script" > /target/etc/cron.d/autoinit
+    - chmod 755 /target/etc/cron.d/autoinit
