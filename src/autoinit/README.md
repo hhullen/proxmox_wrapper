@@ -17,12 +17,12 @@ Setting any script execution once OS is installed. The manual is intended to use
 
 ![virtual_environment](../../misc/virtual_environment.png)
 
-## Create new custom image
 - Then press `Next`. Wait a few seconds.
 - In case ubuntu autoinstall configuration is set, get `Boot` tab, open `grub.cfg` file and inside first `menuentry` change command `linux /casper/vmlinuz ---` to `linux /casper/vmlinuz autoinstall`. As well, `timeout` can be change from 30 to 1 - this is the time (in seconds) is given at start installation to choose some options. But in case automatic installation, no need to wait 30 seconds.  
 
 ![boot_settings](../../misc/boot_settings.png)
 
+## Create new custom image
 - Then press `Next`, stay choosen `gzip` as optimal and press `Generate`.
 - New image will be built in the same directory
 
