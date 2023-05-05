@@ -22,8 +22,6 @@ autoinstall:
       name: lvm
   ssh:
     install-server: false
-  late-commands:
-    - curtin in-target --target=/target -- sudo apt update && sudo apt upgrade
 ```
 > Note the password has to be encrypted. Several tools can generate the crypted password, such as mkpasswd from the whois package, or openssl passwd. Depending on the special characters in the password hash, quoting may be required, so it’s safest to just always include the quotes around the hash.
 Learn more about command lists at [Automated Server installer config file reference](ttps://ubuntu.com/server/docs/install/autoinstall-reference)
@@ -40,7 +38,9 @@ This creates `ubuntu_autounstall.iso` from those two files.
 > The image need to be added as optical drive beside installation image and their order does not matter.
 
 # Customized original image
-All is needed to get the target is `autoinstall` parameter added to kernel command line when installer booted.
+Now, all is needed to get the target is `autoinstall` parameter added to kernel command line when installer booted.
+>> In case the desktop Ubuntu GUI up to 22.04 version is available, using `Custom Ubuntu ISO Creator - CUBIC` would be much easier. Also, if necessary to set any script to run once OS is installed, the same CUBIC can be used. To setup autoinstall and autoinit with CUBIC watch README in `src/autoinit` directory.
+
 First-thing-first download ubuntu image.
 Create work folders:
 ```
