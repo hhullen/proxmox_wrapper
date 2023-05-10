@@ -4,7 +4,7 @@ autoinstall:
   identity:
     realname: ubuntu
     hostname: ubuntu-host
-    password: "$1$r6RkYJRy$dpxT9aD/TQUIXfTMcOROH0"
+    password: "$1$x5sq4Q1q$ZfK1b8yP6w/xaOltaimCF0"
     username: ubuntu
   locale: en_US.UTF-8
   refresh-installer:

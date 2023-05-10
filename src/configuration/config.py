@@ -1,5 +1,6 @@
 from environs import Env
 import logging
+import sys
 import os
 
 
@@ -7,7 +8,7 @@ infolog = logging.getLogger("info_logger")
 infolog.setLevel(logging.INFO)
 _info_format = logging.Formatter(
     '\033[92m%(levelname)s\033[0m: %(asctime)s: %(message)s')
-_info_handler = logging.StreamHandler()
+_info_handler = logging.StreamHandler(sys.stdout)
 _info_handler.setFormatter(_info_format)
 infolog.addHandler(_info_handler)
 
@@ -15,7 +16,7 @@ errlog = logging.getLogger("error_logger")
 errlog.setLevel(logging.ERROR)
 _err_format = logging.Formatter(
     '\033[91m%(levelname)s\033[0m: %(asctime)s: %(message)s')
-_err_handler = logging.StreamHandler()
+_err_handler = logging.StreamHandler(sys.stderr)
 _err_handler.setFormatter(_err_format)
 errlog.addHandler(_err_handler)
 

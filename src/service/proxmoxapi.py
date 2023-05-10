@@ -1,5 +1,6 @@
 from configuration import Config, config_path, valid, errlog, infolog
 from proxmoxer import ProxmoxAPI
+import proxmoxer.backends.https
 from datetime import datetime
 import urllib3
 import time

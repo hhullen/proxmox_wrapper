@@ -4,7 +4,12 @@ Proxmox wrapper on `proxmoxer` Python library. Implements a simple command line 
 # Initial setting
 > To setup configuration installed `Python3` is required.
 
-### 1.Run command
+### 1.Run command from `src` directory
+```
+make install
+```
+This command build executable file `proxapi` and place it into `dist` directory. Put it into any directory the $PATH variable includes to call as any oher utilits.  
+
 ```
 bash configure.sh
 ```
