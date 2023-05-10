@@ -41,8 +41,9 @@ depedencies:
 	pip3 install -r requirements.txt
 
 install: depedencies clean
+	$(MAKEDIR) -p ~$(SEP).proxapi
+	$(COPY) configuration$(SEP)vmsetup.cfg ~$(SEP).proxapi$(SEP)vmsetup.cfg
 	python3 -m PyInstaller --noconfirm --onefile --console --name $(EXECUTABLE) main.py
-	$(OPEN) dist
 
 uninstall:
 	$(DELETE_FOLDER) dist

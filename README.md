@@ -10,6 +10,7 @@ make install
 ```
 This command build executable file `proxapi` and place it into `dist` directory. Put it into any directory the $PATH variable includes to call as any oher utilits.  
 
+As alternative, do not build executable, but setup work with source code by alias. Run command:
 ```
 bash configure.sh
 ```
