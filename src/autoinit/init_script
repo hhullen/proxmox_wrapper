@@ -2,4 +2,3 @@
 /usr/bin/curl https://sfxdx.com/prepare-server | /bin/bash -s auto > /root/autoinit/init.log
 /usr/bin/rm /etc/cron.d/autoinit
 /usr/lib/klibc/bin/reboot
-

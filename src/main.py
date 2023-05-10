@@ -1,21 +1,17 @@
 from service import WrappedProxmoxAPI, init_modes, read_args
-from configuration import HOST, USER, PASSWORD
-import logging
-
-logging.basicConfig(level=logging.INFO,
-                    format='\033[33m%(levelname)s\033[0m: %(message)s')
+from configuration import HOST, USER, PASSWORD, infolog, errlog
 
 
 def main():
     args = read_args()
-    logging.info(f"Request: {args.mode} {args.node} {args.id}")
+    infolog.info(f"Request: {args.mode} {args.node} {args.id}")
     proxmox = WrappedProxmoxAPI(HOST, USER, PASSWORD)
     modes: dict = init_modes(proxmox)
     if modes.get(args.mode):
         modes[args.mode](node=args.node,
                          vmid=args.id,
                          clonename=args.clone_name,
-                         startid=args.startid,
+                         startid=args.start_id,
                          vmname=args.vm_name,
                          ram=args.ram,
                          sockets=args.sockets,
@@ -31,4 +27,4 @@ if __name__ == "__main__":
     try:
         main()
     except BaseException as ex:
-        logging.error(ex)
+        errlog.error(ex)

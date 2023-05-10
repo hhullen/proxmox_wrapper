@@ -1,15 +1,12 @@
-from configuration import Config, config_path, valid
+from configuration import Config, config_path, valid, errlog, infolog
 from proxmoxer import ProxmoxAPI
 from datetime import datetime
 import urllib3
-import logging
 import time
 
 
 class WrappedProxmoxAPI:
     def __init__(self, host: str, user: str, password: str) -> None:
-        logging.basicConfig(level=logging.INFO,
-                            format='\033[33m%(levelname)s\033[0m: %(message)s')
         urllib3.disable_warnings()
         self.proxmox = ProxmoxAPI(host=host,
                                   user=user,
@@ -32,13 +29,16 @@ class WrappedProxmoxAPI:
                                      ide0=f"file={cfg.ide2},media=cdrom,size={cfg.size_ide2}",
                                      scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G",
                                      net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}")
-            logging.info(f"Configurated machine: {response}")
+            infolog.info(f"Configurated machine: {response}")
         else:
-            logging.warning(f"Machine {node}.{vmid} does not exists")
+            errlog.error(f"Machine {node}.{vmid} does not exists")
 
     def create(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
+        if vmid == "auto":
+            start_id = valid(vm.get("startid"), 200)
+            vmid = self._get_new_id(start_id)
         cfg = Config(config_path)
         cfg.update_from_args(vm)
         self._create_storage(cfg, node, vmid)
@@ -50,7 +50,7 @@ class WrappedProxmoxAPI:
                 acpi=1,
                 autostart=1,
                 ostype=cfg.ostype,
-                boot="order=scsi0;ide0;ide1;net0",
+                boot="order=sata0;ide0;ide1;net0",
                 tablet=1,
                 hotplug="disk,network,usb",
                 freeze=0,
@@ -64,17 +64,17 @@ class WrappedProxmoxAPI:
                 sockets=cfg.sockets,
                 ide0=f"file={cfg.ide2},media=cdrom",
                 ide1=f"file={cfg.ide1},media=cdrom",
-                scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G",
+                sata0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G",
                 net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}",
                 scsihw="virtio-scsi-pci")
-            logging.info(f"Created machine: {response}")
+            infolog.info(f"Created machine: {response}")
         else:
-            logging.warning(f"Machine {node}.{vmid} is already exists")
+            errlog.error(f"Machine {node}.{vmid} is already exists")
 
     def clone(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        startid = valid(vm.get("startid"), 100)
+        startid = valid(vm.get("startid"), 200)
         newid = self._get_new_id(startid)
         clonename = valid(vm.get("clonename"), f"clone-{newid}")
         qemu = self.proxmox.nodes(node).qemu(vmid)
@@ -83,20 +83,20 @@ class WrappedProxmoxAPI:
                                    newid=newid,
                                    name=clonename,
                                    full=1)
-        logging.info(f"Cloned {node}.{vmid} => {node}.{newid}: {response}")
+        infolog.info(f"Cloned {node}.{vmid} => {node}.{newid}: {response}")
 
     def delete(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
         response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
         if response['status'] != "stopped":
-            logging.info(f"Terminating: {node}.{vmid}")
+            infolog.info(f"Terminating: {node}.{vmid}")
             response = self.proxmox.nodes(node).qemu(vmid).status.post("stop")
-            logging.info(f"Terminated: {response}")
+            infolog.info(f"Terminated: {response}")
 
         self._wait_termination(node, vmid, 15)
         response = self.proxmox.nodes(node).qemu(vmid).delete()
-        logging.info(f"Deleted: {response}")
+        infolog.info(f"Deleted: {response}")
 
     def start(self, **vm):
         node = vm.get("node")
@@ -105,9 +105,9 @@ class WrappedProxmoxAPI:
         if response['status'] == "stopped":
             response = self.proxmox.nodes(node).qemu(
                 vmid).status.post("start")
-            logging.info(f"Started machine: {response}")
+            infolog.info(f"Started machine: {response}")
         else:
-            logging.warning(f"Machine is already started: {response}")
+            errlog.error(f"Machine is already started: {response}")
 
     def stop(self, **vm):
         node = vm.get("node")
@@ -116,15 +116,15 @@ class WrappedProxmoxAPI:
         if response['status'] != "stopped":
             response = self.proxmox.nodes(node).qemu(
                 vmid).status.post("stop")
-            logging.info(f"Stopped machine: {response}")
+            infolog.info(f"Stopped machine: {response}")
         else:
-            logging.warning(f"Machine is already stopped: {response}")
+            errlog.error(f"Machine is already stopped: {response}")
 
     def reboot(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
         response = self.proxmox.nodes(node).qemu(vmid).status.post("reset")
-        logging.info(f"Reboot machine: {response}")
+        infolog.info(f"Reboot machine: {response}")
 
     def rebuild(self, **vm):
         node = vm.get("node")
@@ -177,7 +177,7 @@ class WrappedProxmoxAPI:
                                         size=f"{cfg.vm_disk_size}G",
                                         storage=cfg.node_storage_name,
                                         vmid=vmid)
-        logging.info(f"Created disk: {new_disk_name}. {response}")
+        infolog.info(f"Created disk: {new_disk_name}. {response}")
 
     def delete_storage(self, cfg: Config, node, vmid):
         disk_name: str = f"vm-{vmid}-disk-0"
@@ -185,7 +185,7 @@ class WrappedProxmoxAPI:
             storage = self.proxmox.nodes(node).storage(cfg.node_storage_name)
             response = storage.content(disk_name).delete(node=node,
                                                          volume=vmid)
-            logging.info(f"Deleted disk: {disk_name}. {response}")
+            infolog.info(f"Deleted disk: {disk_name}. {response}")
 
     def _is_disk_exists(self, cfg: Config, new_disk_name, node) -> bool:
         disks: list = self.proxmox.nodes(node).storage(
@@ -214,7 +214,8 @@ class WrappedProxmoxAPI:
     def _get_all_vm_list(self, nodes) -> list:
         ids: list = []
         for node in nodes:
-            ids += self._get_node_vm_list(node['node'])
+            if node['status'] == "online":
+                ids += self._get_node_vm_list(node['node'])
         return ids
 
     def _get_node_vm_list(self, node) -> list:

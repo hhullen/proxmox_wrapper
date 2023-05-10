@@ -1,9 +1,23 @@
 from environs import Env
-import os
 import logging
+import os
 
-logging.basicConfig(level=logging.INFO,
-                    format='\033[33m%(levelname)s\033[0m: %(message)s')
+
+infolog = logging.getLogger("info_logger")
+infolog.setLevel(logging.INFO)
+_info_format = logging.Formatter(
+    '\033[92m%(levelname)s\033[0m: %(asctime)s: %(message)s')
+_info_handler = logging.StreamHandler()
+_info_handler.setFormatter(_info_format)
+infolog.addHandler(_info_handler)
+
+errlog = logging.getLogger("error_logger")
+errlog.setLevel(logging.ERROR)
+_err_format = logging.Formatter(
+    '\033[91m%(levelname)s\033[0m: %(asctime)s: %(message)s')
+_err_handler = logging.StreamHandler()
+_err_handler.setFormatter(_err_format)
+errlog.addHandler(_err_handler)
 
 
 config_path = f"/home/{os.getenv('USER')}/.proxapi/vmsetup.cfg"
@@ -12,7 +26,7 @@ config_path = f"/home/{os.getenv('USER')}/.proxapi/vmsetup.cfg"
 try:
     PASSWORD = os.environ['PROX_PASS']
 except:
-    logging.error(
+    errlog.error(
         "Enter a password to ProxmoxVE connection as environment "
         "variable: export PROX_PASS='your_pass_word'")
     exit()
@@ -23,8 +37,8 @@ try:
     HOST = env("PROXMOX_HOST")
     USER = env("USER_NAME")
 except:
-    logging.error("Can not read configuration file for HOST and USER field."
-                  "Try to run bash configure.sh from src folder in source code directory.")
+    errlog.error("Can not read configuration file for HOST and USER field."
+                 "Try to run bash configure.sh from src folder in source code directory.")
     exit()
 
 

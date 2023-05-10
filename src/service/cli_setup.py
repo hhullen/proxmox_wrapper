@@ -20,7 +20,7 @@ def read_args() -> Namespace:
     parser.add_argument("--clone-name", type=str,
                         metavar="[name]",
                         help="clone name")
-    parser.add_argument("--startid", type=int,
+    parser.add_argument("--start-id", type=int,
                         metavar="[id]",
                         help="id which new id searching will be starting from")
     parser.add_argument("--vm-name", type=str,
