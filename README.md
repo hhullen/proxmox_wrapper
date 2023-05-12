@@ -8,7 +8,7 @@ Proxmox wrapper on `proxmoxer` Python library. Implements a simple command line 
 ```
 make install
 ```
-This command build executable file `proxapi` and place it into `dist` directory. Put it into any directory the $PATH variable includes to call as any oher utilits.  
+This command build executable file `proxapi` and place it into `dist` directory. Put it into any directory the $PATH variable includes to call as any other utilits. Also, creates virtual machine configuration file to `~/.proxapi/vmsetup.cfg`. Configure connection parameters and vm parameters in this file.  
 
 As alternative, do not build executable, but setup work with source code by alias. Run command:
 ```
@@ -17,16 +17,16 @@ bash configure.sh
 The script will:
 - installs missing python libraries
 - adds alias `proxapi` to init terminal files. So, it is necessary to reload terminal to use `proxapi` command.
-- creates virtual machine configuration file to `/home/$USER/.proxapi/vmsetup.cfg`. Configure connection parameters and vm parameters in this file.
+- creates virtual machine configuration file to `~/.proxapi/vmsetup.cfg`. Configure connection parameters and vm parameters in this file.
 
 ### 2. Get images
-The next two things is needed the `Image with installation configuration` and the `Customized original image`. How to do that described in `README.md` at `aurounstall_source` directoty.
+The next two things is needed the `Image with installation configuration` and the `Customized original image`. How to do that described in `README.md` at `aurounstall_source` directoty.  
 
 ### 3. Upload images
 Upload the `Image with installation configuration` and the `Customized original image` to Proxmox cluster node storage.
 
 ### 4. Update images location
-Update images location in configuration file `/home/$USER/.proxapi/vmsetup.cfg`. Path must be in format: `node_storage_name:image_name.iso`
+Update images location in configuration file `~/.proxapi/vmsetup.cfg`. Path must be in format: `node_storage_name:image_name.iso`
 Place autoinstall config image to `IDE1` and main image to installation to `IDE2` and set their sizes for instance:
 ```
 ...
@@ -55,7 +55,7 @@ SIZE_IDE2="1900M"
     
     2. `Node name` - can take name of existing cluster node
 
-    3. `Machine id `- identifier of VM the action excecutes with. In case `status` command called, it can take value `all` to show information from all node VMs. In case `create` command called, it can take value `auto` to create new vm with any free id.
+    3. `Machine id `- identifier of VM the action excecutes with. In case `status` command called, it can take value `all` to show information from all node VMs. In case `create` command called, it can take value `auto` to create new vm with any free id (start searching free id from 200 by default).
 
 - Optional arguments - can be specified with defifinite flag:
     2. `--start-id [id]` - set start VM id value which the next free id will be chosen after (to clone or create any vm)
@@ -67,6 +67,8 @@ SIZE_IDE2="1900M"
     8. `--node-storage-name [node storage name]` - existing storage name of node for specify where to create new disk for new VM.
     9. `--help`, `-h` - to ges short description
 
+>> In case some optional arguments was not specified, defaul values will be set instead from config file `~/.proxapi/vmsetup.cfg`
+
 # Some using examples
 ```
 proxapi create pve3 203 --vm-name "test-name-1" --ram 4096 \
@@ -76,7 +78,7 @@ proxapi create pve3 203 --vm-name "test-name-1" --ram 4096 \
 proxapi start pve3 203
 ```
 ```
-proxapi clone pve3 203 --clone-name "cloned-vm-0" --startid 200
+proxapi clone pve3 203 --vm-name "cloned-vm-0" --start-id 200
 ```
 ```
 proxapi stop pve3 203
