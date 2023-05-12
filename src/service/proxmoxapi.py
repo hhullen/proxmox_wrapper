@@ -1,18 +1,70 @@
-from configuration import Config, config_path, valid, errlog, infolog
-from proxmoxer import ProxmoxAPI
-import proxmoxer.backends.https
+from configuration import Config, config_path, valid, errlog, infolog, warnlog
+from paramiko import SSHClient, SSHException
+from paramiko.channel import ChannelFile, ChannelStderrFile
 from datetime import datetime
-import urllib3
+import json
 import time
 
 
-class WrappedProxmoxAPI:
+class ProxmoxSSHClient():
+    def __init__(self, host: str, user: str, password: str):
+        self.client = SSHClient()
+        self.client.load_system_host_keys()
+        self.client.connect(hostname=host,
+                            username=user,
+                            password=password)
+
+    def __del__(self):
+        self.client.close()
+
+    def get(self, api_path: str) -> dict | list:
+        return self._request(api_path, "get")
+
+    def post(self, api_path: str) -> dict | list:
+        return self._request(api_path, "create")
+
+    def put(self, api_path: str) -> dict | list:
+        return self._request(api_path, "set")
+
+    def delete(self, api_path: str) -> dict | list:
+        return self._request(api_path, "delete")
+
+    def _request(self, api_path: str, method: str) -> dict | list:
+        sstdin, stdout, stderr = self.client.exec_command(
+            f"pvesh {method} {api_path} --output-format json")
+        self._handle_stderr(stderr)
+        return self._handle_stdout(stdout)
+
+    def _handle_stderr(self, stderr: ChannelStderrFile):
+        stderr: str = stderr.read().decode('utf-8')
+        if "WARNING" in stderr:
+            self._handle_output(stderr)
+        elif stderr:
+            raise SSHException(stderr)
+
+    def _handle_stdout(self, stdout: ChannelFile):
+        stdout: str = stdout.read().decode("utf-8")
+        try:
+            return json.loads(stdout)
+        except:
+            self._handle_output(stdout)
+            return stdout
+
+    def _handle_output(self, output: str):
+        output = output.strip('\n').split('\n')
+        for message in output:
+            if "WARNING" in message:
+                warnlog.warning(message.strip("WARNING: ").strip(' '))
+            else:
+                pass
+                infolog.info(message.strip(' '))
+
+
+class ProxmoxAPI:
     def __init__(self, host: str, user: str, password: str) -> None:
-        urllib3.disable_warnings()
-        self.proxmox = ProxmoxAPI(host=host,
-                                  user=user,
-                                  password=password,
-                                  verify_ssl=False)
+        self.client = ProxmoxSSHClient(host=host,
+                                       user=user,
+                                       password=password)
 
     def configurate(self, **vm):
         node = vm.get("node")
@@ -20,17 +72,16 @@ class WrappedProxmoxAPI:
         cfg = Config(config_path)
         cfg.update_from_args(vm)
         if self._is_vm_exists(node, vmid):
-            vmconfig = self.proxmox.nodes(node).qemu(vmid).config
-            response = vmconfig.post(name=cfg.name,
-                                     ostype=cfg.ostype,
-                                     memory=cfg.ram,
-                                     cores=cfg.cores,
-                                     sockets=cfg.sockets,
-                                     ide1=f"file={cfg.ide1},media=cdrom,size={cfg.size_ide1}",
-                                     ide0=f"file={cfg.ide2},media=cdrom,size={cfg.size_ide2}",
-                                     scsi0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G",
-                                     net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}")
-            infolog.info(f"Configurated machine: {response}")
+            self.client.post(f"/nodes/{node}/qemu/{vmid}/config "
+                             f"--name {cfg.name} "
+                             f"--ostype {cfg.ostype} "
+                             f"--memory {cfg.ram} "
+                             f"--cores {cfg.cores} "
+                             f"--sockets {cfg.sockets} "
+                             f"--ide1 file={cfg.ide1},media=cdrom,size={cfg.size_ide1} "
+                             f"--ide0 file={cfg.ide2},media=cdrom,size={cfg.size_ide2} "
+                             f"--scsi0 {cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G "
+                             f"--net0 model=virtio,bridge={cfg.brigde},firewall={cfg.firewall} ")
         else:
             errlog.error(f"Machine {node}.{vmid} does not exists")
 
@@ -42,33 +93,32 @@ class WrappedProxmoxAPI:
             vmid = self._get_new_id(start_id)
         cfg = Config(config_path)
         cfg.update_from_args(vm)
-        self._create_storage(cfg, node, vmid)
+        self._create_disk(cfg, node, vmid)
+
         if not self._is_vm_exists(node, vmid):
-            response = self.proxmox.nodes(node).qemu.post(
-                # options
-                vmid=vmid,
-                name=cfg.name,
-                acpi=1,
-                autostart=1,
-                ostype=cfg.ostype,
-                boot="order=sata0;ide0;ide1;net0",
-                tablet=1,
-                hotplug="disk,network,usb",
-                freeze=0,
-                localtime=1,
-                agent=1,
-                protection=0,
-                vmstatestorage="automatic",
-                #  hardware
-                memory=cfg.ram,
-                cores=cfg.cores,
-                sockets=cfg.sockets,
-                ide0=f"file={cfg.ide2},media=cdrom",
-                ide1=f"file={cfg.ide1},media=cdrom",
-                sata0=f"{cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G",
-                net0=f"model=virtio,bridge={cfg.brigde},firewall={cfg.firewall}",
-                scsihw="virtio-scsi-pci")
-            infolog.info(f"Created machine: {response}")
+            self.client.post(f"/nodes/{node}/qemu "
+                             f"--vmid {vmid} "
+                             f"--name {cfg.name} "
+                             f"--acpi 1 "
+                             f"--autostart 1 "
+                             f"--ostype {cfg.ostype} "
+                             f"--boot order=\"sata0;ide0;scsi0;net0\" "
+                             f"--tablet 1 "
+                             f"--hotplug disk,network,usb "
+                             f"--freeze 0 "
+                             f"--localtime 1 "
+                             f"--agent 1 "
+                             f"--protection 0 "
+                             f"--vmstatestorage automatic "
+                             f"--memory {cfg.ram} "
+                             f"--cores {cfg.cores} "
+                             f"--sockets {cfg.sockets} "
+                             f"--ide0 file={cfg.ide2},media=cdrom,size={cfg.size_ide2} "
+                             f"--sata0 file={cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G "
+                             f"--net0 model=virtio,bridge={cfg.brigde},firewall={cfg.firewall} "
+                             f"--scsi0 file=local-lvm:cloudinit "
+                             f"--cicustom user=snippets:snippets/user-data "
+                             f"--scsihw virtio-scsi-pci")
         else:
             errlog.error(f"Machine {node}.{vmid} is already exists")
 
@@ -77,54 +127,50 @@ class WrappedProxmoxAPI:
         vmid = vm.get("vmid")
         startid = valid(vm.get("startid"), 200)
         newid = self._get_new_id(startid)
-        clonename = valid(vm.get("clonename"), f"clone-{newid}")
-        qemu = self.proxmox.nodes(node).qemu(vmid)
-        response = qemu.clone.post(node=node,
-                                   vmid=vmid,
-                                   newid=newid,
-                                   name=clonename,
-                                   full=1)
-        infolog.info(f"Cloned {node}.{vmid} => {node}.{newid}: {response}")
+        clonename = valid(vm.get("vmname"), f"clone-{newid}")
+        response = self.client.post(f"/nodes/{node}/qemu/{vmid}/clone "
+                                    f"--newid {newid} "
+                                    f"--name {clonename} "
+                                    f"--full 1")
 
     def delete(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
+        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
         if response['status'] != "stopped":
             infolog.info(f"Terminating: {node}.{vmid}")
-            response = self.proxmox.nodes(node).qemu(vmid).status.post("stop")
+            response = self.client.post(
+                f"/nodes/{node}/qemu/{vmid}/status/stop")
             infolog.info(f"Terminated: {response}")
 
         self._wait_termination(node, vmid, 15)
-        response = self.proxmox.nodes(node).qemu(vmid).delete()
-        infolog.info(f"Deleted: {response}")
+        response = self.client.delete(f"/nodes/{node}/qemu/{vmid}")
 
     def start(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
+        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
         if response['status'] == "stopped":
-            response = self.proxmox.nodes(node).qemu(
-                vmid).status.post("start")
-            infolog.info(f"Started machine: {response}")
+            self.client.post(f"/nodes/{node}/qemu/{vmid}/status/start")
         else:
-            errlog.error(f"Machine is already started: {response}")
+            errlog.error(f"Machine is already started!")
 
     def stop(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
+        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
         if response['status'] != "stopped":
-            response = self.proxmox.nodes(node).qemu(
-                vmid).status.post("stop")
-            infolog.info(f"Stopped machine: {response}")
+            response = self.client.post(
+                f"/nodes/{node}/qemu/{vmid}/status/stop")
+            infolog.info(response)
         else:
-            errlog.error(f"Machine is already stopped: {response}")
+            errlog.error(f"Machine is not running!")
 
     def reboot(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        response = self.proxmox.nodes(node).qemu(vmid).status.post("reset")
+        response = self.client.post(
+            f"/nodes/{node}/qemu/{vmid}/status/reset")
         infolog.info(f"Reboot machine: {response}")
 
     def rebuild(self, **vm):
@@ -145,7 +191,7 @@ class WrappedProxmoxAPI:
             self._print_vm_status(node, vmid)
 
     def _print_vm_status(self, node, vmid):
-        response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
+        response = self.client.get(f"nodes/{node}/qemu/{vmid}/status/current")
         uptime = datetime.fromtimestamp(
             int(response['uptime'])) - datetime.fromtimestamp(0)
         status = f"{response['status']} LOCKED" if response.get(
@@ -160,37 +206,29 @@ class WrappedProxmoxAPI:
               f"Root disk size, MB:\t{int(response['maxdisk']) / 1024 / 1024}\n")
 
     def _is_vm_exists(self, node, vmid) -> bool:
-        response = self.proxmox.nodes(node).qemu.get()
-        for mv in response:
-            if mv['vmid'] == vmid:
+        response = self.client.get(f"/nodes/{node}/qemu")
+        for vm in response:
+            if vm['vmid'] == int(vmid):
                 return True
         return False
 
-    def _create_storage(self, cfg: Config, node, vmid):
+    def _create_disk(self, cfg: Config, node, vmid):
         new_disk_name: str = f"vm-{vmid}-disk-0"
-        if self._is_disk_exists(cfg, new_disk_name, node):
-            return
+        self._delete_disk(cfg, node, vmid)
+        self.client.post(f"/nodes/{node}/storage/{cfg.node_storage_name}/content "
+                         f"--filename {new_disk_name} "
+                         f"--size {cfg.vm_disk_size}G "
+                         f"--vmid {vmid}")
 
-        storage = self.proxmox.nodes(node).storage(cfg.node_storage_name)
-
-        response = storage.content.post(filename=f"vm-{vmid}-disk-0",
-                                        node=node,
-                                        size=f"{cfg.vm_disk_size}G",
-                                        storage=cfg.node_storage_name,
-                                        vmid=vmid)
-        infolog.info(f"Created disk: {new_disk_name}. {response}")
-
-    def delete_storage(self, cfg: Config, node, vmid):
+    def _delete_disk(self, cfg: Config, node, vmid):
         disk_name: str = f"vm-{vmid}-disk-0"
         if self._is_disk_exists(cfg, disk_name, node):
-            storage = self.proxmox.nodes(node).storage(cfg.node_storage_name)
-            response = storage.content(disk_name).delete(node=node,
-                                                         volume=vmid)
-            infolog.info(f"Deleted disk: {disk_name}. {response}")
+            self.client.delete(
+                f"/nodes/{node}/storage/{cfg.node_storage_name}/content/{disk_name}")
 
     def _is_disk_exists(self, cfg: Config, new_disk_name, node) -> bool:
-        disks: list = self.proxmox.nodes(node).storage(
-            cfg.node_storage_name).get("content")
+        disks: list = self.client.get(
+            f"/nodes/{node}/storage/{cfg.node_storage_name}/content")
 
         disks = list(map(lambda name: name['volid'].strip(
             f"{cfg.node_storage_name}:"), disks))
@@ -198,15 +236,15 @@ class WrappedProxmoxAPI:
         return len(list(filter(lambda name: f"vm-{name}" == new_disk_name, disks))) > 0
 
     def _wait_termination(self, node: str, vmid: str, timeout: int):
-        response = self.proxmox.nodes(node).qemu(vmid).status.get("current")
+        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
         while response['status'] != "stopped" and timeout:
             timeout -= 1
             time.sleep(1)
-            response = self.proxmox.nodes(node).qemu(
-                vmid).status.get("current")
+            response = self.client.get(
+                f"/nodes/{node}/qemu/{vmid}/status/current")
 
     def _get_new_id(self, start):
-        nodes = self.proxmox.get("nodes")
+        nodes = self.client.get("/nodes")
         ids: list = self._get_all_vm_list(nodes)
         while start in ids:
             start += 1
@@ -221,7 +259,7 @@ class WrappedProxmoxAPI:
 
     def _get_node_vm_list(self, node) -> list:
         ids: list = []
-        qemus = self.proxmox.nodes(node).qemu.get()
+        qemus = self.client.get(f"/nodes/{node}/qemu")
         for qemu in qemus:
             ids.append(qemu['vmid'])
         return ids

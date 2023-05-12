@@ -1,4 +1,4 @@
-from .proxmoxapi import WrappedProxmoxAPI
+from .proxmoxapi import ProxmoxAPI
 from argparse import ArgumentParser, Namespace
 
 
@@ -44,7 +44,7 @@ def read_args() -> Namespace:
     return parser.parse_args()
 
 
-def init_modes(proxmox: WrappedProxmoxAPI):
+def init_modes(proxmox: ProxmoxAPI):
     modes: dict = {}
     modes["create"] = proxmox.create
     modes["delete"] = proxmox.delete

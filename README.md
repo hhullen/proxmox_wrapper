@@ -58,7 +58,6 @@ SIZE_IDE2="1900M"
     3. `Machine id `- identifier of VM the action excecutes with. In case `status` command called, it can take value `all` to show information from all node VMs. In case `create` command called, it can take value `auto` to create new vm with any free id.
 
 - Optional arguments - can be specified with defifinite flag:
-    1. `--clone-name [name]` - clone name
     2. `--start-id [id]` - set start VM id value which the next free id will be chosen after (to clone or create any vm)
     3. `--vm-name [vm-name]` - name to new created VM
     4. `--ram [ram]` - RAM memory. Specify just a number without units which is MiB by default.

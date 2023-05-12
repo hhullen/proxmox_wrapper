@@ -20,6 +20,14 @@ _err_handler = logging.StreamHandler(sys.stderr)
 _err_handler.setFormatter(_err_format)
 errlog.addHandler(_err_handler)
 
+warnlog = logging.getLogger("warning_logger")
+warnlog.setLevel(logging.WARNING)
+_warn_format = logging.Formatter(
+    '\033[93m%(levelname)s\033[0m: %(asctime)s: %(message)s')
+_warn_handler = logging.StreamHandler(sys.stderr)
+_warn_handler.setFormatter(_warn_format)
+warnlog.addHandler(_warn_handler)
+
 
 config_path = f"/home/{os.getenv('USER')}/.proxapi/vmsetup.cfg"
 

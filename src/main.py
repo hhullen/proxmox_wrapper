@@ -1,11 +1,11 @@
-from service import WrappedProxmoxAPI, init_modes, read_args
+from service import ProxmoxAPI, init_modes, read_args
 from configuration import HOST, USER, PASSWORD, infolog, errlog
 
 
 def main():
     args = read_args()
     infolog.info(f"Request: {args.mode} {args.node} {args.id}")
-    proxmox = WrappedProxmoxAPI(HOST, USER, PASSWORD)
+    proxmox = ProxmoxAPI(HOST, USER, PASSWORD)
     modes: dict = init_modes(proxmox)
     if modes.get(args.mode):
         modes[args.mode](node=args.node,
@@ -20,7 +20,8 @@ def main():
                          storagename=args.node_storage_name)
     else:
         raise BaseException(
-            "Wrong mode specified. Available: [create/delete/start/stop/reboot/config/status/clone]")
+            "Wrong mode specified. Available: "
+            "[create/delete/start/stop/reboot/config/status/clone]")
 
 
 if __name__ == "__main__":
