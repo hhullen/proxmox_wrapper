@@ -1,5 +1,5 @@
-from service import ProxmoxAPI, init_modes, read_args
 from configuration import HOST, USER, PASSWORD, infolog, errlog
+from service import ProxmoxAPI, init_modes, read_args
 
 
 def main():

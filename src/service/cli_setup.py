@@ -1,5 +1,5 @@
-from .proxmoxapi import ProxmoxAPI
 from argparse import ArgumentParser, Namespace
+from .proxmoxapi import ProxmoxAPI
 
 
 def read_args() -> Namespace:

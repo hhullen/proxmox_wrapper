@@ -1,9 +1,11 @@
 from configuration import Config, config_path, valid, errlog, infolog, warnlog
-from paramiko import SSHClient, SSHException
 from paramiko.channel import ChannelFile, ChannelStderrFile
+from configuration import ubuntu_autoinstall_config
+from paramiko import SSHClient, SSHException
 from datetime import datetime
-import json
 import time
+import json
+import yaml
 
 
 class ProxmoxSSHClient():
@@ -17,6 +19,11 @@ class ProxmoxSSHClient():
     def __del__(self):
         self.client.close()
 
+    def execute(self, cmd: str) -> str:
+        sstdin, stdout, stderr = self.client.exec_command(cmd)
+        self._handle_stderr(stderr)
+        return self._handle_stdout(stdout)
+
     def get(self, api_path: str) -> dict | list:
         return self._request(api_path, "get")
 
@@ -29,7 +36,7 @@ class ProxmoxSSHClient():
     def delete(self, api_path: str) -> dict | list:
         return self._request(api_path, "delete")
 
-    def _request(self, api_path: str, method: str) -> dict | list:
+    def _request(self, api_path: str, method: str) -> dict | list | str:
         sstdin, stdout, stderr = self.client.exec_command(
             f"pvesh {method} {api_path} --output-format json")
         self._handle_stderr(stderr)
@@ -55,8 +62,7 @@ class ProxmoxSSHClient():
         for message in output:
             if "WARNING" in message:
                 warnlog.warning(message.strip("WARNING: ").strip(' '))
-            else:
-                pass
+            elif message:
                 infolog.info(message.strip(' '))
 
 
@@ -72,6 +78,7 @@ class ProxmoxAPI:
         cfg = Config(config_path)
         cfg.update_from_args(vm)
         if self._is_vm_exists(node, vmid):
+            self._add_user_data(cfg.name, vmid)
             self.client.post(f"/nodes/{node}/qemu/{vmid}/config "
                              f"--name {cfg.name} "
                              f"--ostype {cfg.ostype} "
@@ -81,7 +88,9 @@ class ProxmoxAPI:
                              f"--ide1 file={cfg.ide1},media=cdrom,size={cfg.size_ide1} "
                              f"--ide0 file={cfg.ide2},media=cdrom,size={cfg.size_ide2} "
                              f"--scsi0 {cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G "
-                             f"--net0 model=virtio,bridge={cfg.brigde},firewall={cfg.firewall} ")
+                             f"--net0 model=virtio,bridge={cfg.brigde},firewall={cfg.firewall} "
+                             f"--scsi0 file=local-lvm:cloudinit "
+                             f"--cicustom user=snippets:snippets/user-data-{vmid} ")
         else:
             errlog.error(f"Machine {node}.{vmid} does not exists")
 
@@ -96,13 +105,14 @@ class ProxmoxAPI:
         self._create_disk(cfg, node, vmid)
 
         if not self._is_vm_exists(node, vmid):
+            self._add_user_data(cfg.name, vmid)
             self.client.post(f"/nodes/{node}/qemu "
                              f"--vmid {vmid} "
                              f"--name {cfg.name} "
                              f"--acpi 1 "
                              f"--autostart 1 "
                              f"--ostype {cfg.ostype} "
-                             f"--boot order=\"sata0;ide0;scsi0;net0\" "
+                             f"--boot order=\"sata0;scsi0;ide0;net0\" "
                              f"--tablet 1 "
                              f"--hotplug disk,network,usb "
                              f"--freeze 0 "
@@ -117,10 +127,17 @@ class ProxmoxAPI:
                              f"--sata0 file={cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G "
                              f"--net0 model=virtio,bridge={cfg.brigde},firewall={cfg.firewall} "
                              f"--scsi0 file=local-lvm:cloudinit "
-                             f"--cicustom user=snippets:snippets/user-data "
+                             f"--cicustom user=snippets:snippets/user-data-{vmid} "
                              f"--scsihw virtio-scsi-pci")
         else:
             errlog.error(f"Machine {node}.{vmid} is already exists")
+
+    def _add_user_data(self, vmname, vmid):
+        ubuntu_autoinstall_config["autoinstall"]["identity"]["hostname"] = vmname
+        user_data_string = yaml.dump(
+            ubuntu_autoinstall_config, sort_keys=False)
+        self.client.execute(
+            f"echo -e '#cloud-config\n{user_data_string}' > /snippets/snippets/user-data-{vmid}")
 
     def clone(self, **vm):
         node = vm.get("node")
@@ -128,10 +145,10 @@ class ProxmoxAPI:
         startid = valid(vm.get("startid"), 200)
         newid = self._get_new_id(startid)
         clonename = valid(vm.get("vmname"), f"clone-{newid}")
-        response = self.client.post(f"/nodes/{node}/qemu/{vmid}/clone "
-                                    f"--newid {newid} "
-                                    f"--name {clonename} "
-                                    f"--full 1")
+        self.client.post(f"/nodes/{node}/qemu/{vmid}/clone "
+                         f"--newid {newid} "
+                         f"--name {clonename} "
+                         f"--full 1")
 
     def delete(self, **vm):
         node = vm.get("node")
@@ -214,11 +231,12 @@ class ProxmoxAPI:
 
     def _create_disk(self, cfg: Config, node, vmid):
         new_disk_name: str = f"vm-{vmid}-disk-0"
-        self._delete_disk(cfg, node, vmid)
-        self.client.post(f"/nodes/{node}/storage/{cfg.node_storage_name}/content "
-                         f"--filename {new_disk_name} "
-                         f"--size {cfg.vm_disk_size}G "
-                         f"--vmid {vmid}")
+        if not self._is_vm_exists(node, vmid):
+            self._delete_disk(cfg, node, vmid)
+            self.client.post(f"/nodes/{node}/storage/{cfg.node_storage_name}/content "
+                             f"--filename {new_disk_name} "
+                             f"--size {cfg.vm_disk_size}G "
+                             f"--vmid {vmid}")
 
     def _delete_disk(self, cfg: Config, node, vmid):
         disk_name: str = f"vm-{vmid}-disk-0"

@@ -35,12 +35,14 @@ ifeq ($(OS), Darwin)
 	APP_NAME=$(MAIN_PROJ_NAME).app
 endif
 
-all: depedencies install
+.PHONY: all install 
+
+all: install
 
 depedencies:
 	pip3 install -r requirements.txt
 
-install: depedencies clean
+install: uninstall clean depedencies
 	$(MAKEDIR) -p ~$(SEP).proxapi
 	$(COPY) configuration$(SEP)vmsetup.cfg ~$(SEP).proxapi$(SEP)vmsetup.cfg
 	python3 -m PyInstaller --noconfirm --onefile --console --name $(EXECUTABLE) main.py

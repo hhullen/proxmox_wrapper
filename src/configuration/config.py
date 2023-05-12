@@ -2,6 +2,7 @@ from environs import Env
 import logging
 import sys
 import os
+import yaml
 
 
 infolog = logging.getLogger("info_logger")
@@ -81,3 +82,27 @@ class Config:
         self.vm_disk_size = valid(args.get("disksize"), self.vm_disk_size)
         self.node_storage_name = valid(
             args.get("storagename"), self.node_storage_name)
+
+
+ubuntu_autoinstall_config: str = "#cloud-config\n" \
+    "autoinstall:\n" \
+    "  version: 1\n" \
+    "  identity:\n" \
+    "    realname: ubuntu\n" \
+    "    hostname: ubuntu-host\n" \
+    "    password: \"$1$x5sq4Q1q$ZfK1b8yP6w/xaOltaimCF0\"\n" \
+    "    username: ubuntu\n" \
+    "  locale: en_US.UTF-8\n" \
+    "  refresh-installer:\n" \
+    "    update: no\n" \
+    "  storage:\n" \
+    "    layout:\n" \
+    "      name: lvm\n" \
+    "  ssh:\n" \
+    "    install-server: false\n" \
+    "  late-commands:\n" \
+    "    - echo \"10.10.31.0 24\" > /target/root/autoinit/address\n" \
+    "    - bash /target/root/autoinit/init_address `cat /target/root/autoinit/address`\n" \
+    "    - echo \"@reboot root /bin/bash /root/autoinit/init_script\" > /target/etc/cron.d/autoinit\n" \
+    "    - chmod 755 /target/etc/cron.d/autoinit\n"
+ubuntu_autoinstall_config = yaml.safe_load(ubuntu_autoinstall_config)
