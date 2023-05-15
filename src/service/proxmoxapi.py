@@ -1,11 +1,12 @@
 from configuration import Config, config_path, valid, errlog, infolog, warnlog
 from paramiko.channel import ChannelFile, ChannelStderrFile
-from configuration import ubuntu_autoinstall_config
+from configuration import ubuntu_autoinstall_config, network_settings
 from paramiko import SSHClient, SSHException
 from datetime import datetime
 import time
 import json
 import yaml
+import re
 
 
 class ProxmoxSSHClient():
@@ -78,7 +79,6 @@ class ProxmoxAPI:
         cfg = Config(config_path)
         cfg.update_from_args(vm)
         if self._is_vm_exists(node, vmid):
-            self._add_user_data(cfg.name, vmid)
             self.client.post(f"/nodes/{node}/qemu/{vmid}/config "
                              f"--name {cfg.name} "
                              f"--ostype {cfg.ostype} "
@@ -105,7 +105,7 @@ class ProxmoxAPI:
         self._create_disk(cfg, node, vmid)
 
         if not self._is_vm_exists(node, vmid):
-            self._add_user_data(cfg.name, vmid)
+            self._add_user_data(cfg.name, vmid, cfg.network)
             self.client.post(f"/nodes/{node}/qemu "
                              f"--vmid {vmid} "
                              f"--name {cfg.name} "
@@ -132,8 +132,24 @@ class ProxmoxAPI:
         else:
             errlog.error(f"Machine {node}.{vmid} is already exists")
 
-    def _add_user_data(self, vmname, vmid):
-        ubuntu_autoinstall_config["autoinstall"]["identity"]["hostname"] = vmname
+    def _add_user_data(self, vmname, vmid, network):
+        ip_address = self.client.execute(
+            f"ip_seeker {network} --binded ~/binded.ip --reverse true")
+
+        if not re.findall("[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}", ip_address):
+            raise BaseException(
+                f"IP address have not been got correctly in network {network}")
+        byte = ip_address.split('.')
+
+        iface = network_settings["network"]["ethernets"]["ens18"]
+        iface["addresses"] = [f"{byte[0]}.{byte[1]}.{byte[2]}.{byte[3]}/24"]
+        iface["gateway4"] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
+        iface["nameservers"]["addresses"][0] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
+
+        autoinstall = ubuntu_autoinstall_config["autoinstall"]
+        autoinstall["identity"]["hostname"] = vmname
+        autoinstall["network"] = network_settings
+
         user_data_string = yaml.dump(
             ubuntu_autoinstall_config, sort_keys=False)
         self.client.execute(

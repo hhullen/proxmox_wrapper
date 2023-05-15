@@ -41,6 +41,9 @@ def read_args() -> Namespace:
     parser.add_argument("--node-storage-name", type=str,
                         metavar="[node storage name]",
                         help="node existing storage name")
+    parser.add_argument("--network", type=str,
+                        metavar="[vm network]",
+                        help="network to set up in format: \"10.10.15.0/24\"")
     return parser.parse_args()
 
 

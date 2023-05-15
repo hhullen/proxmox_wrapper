@@ -17,7 +17,8 @@ def main():
                          sockets=args.sockets,
                          cores=args.cores,
                          disksize=args.vm_disk_size,
-                         storagename=args.node_storage_name)
+                         storagename=args.node_storage_name,
+                         network=args.network)
     else:
         raise BaseException(
             "Wrong mode specified. Available: "
