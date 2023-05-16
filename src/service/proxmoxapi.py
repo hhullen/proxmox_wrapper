@@ -1,4 +1,4 @@
-from configuration import Config, config_path, valid, errlog, infolog, warnlog
+from configuration import Config, config_dir, valid, errlog, infolog, warnlog
 from configuration import ubuntu_autoinstall_config, network_settings
 from .proxmoxssh import ProxmoxSSHClient
 from datetime import datetime
@@ -16,7 +16,7 @@ class ProxmoxAPI:
     def configurate(self, **vm):
         node = vm.get("node")
         vmid = vm.get("vmid")
-        cfg = Config(config_path)
+        cfg = Config(f"{config_dir}/vmsetup.cfg")
         cfg.update_from_args(vm)
         if self._is_vm_exists(node, vmid):
             self.client.post(f"/nodes/{node}/qemu/{vmid}/config "
@@ -40,7 +40,7 @@ class ProxmoxAPI:
         if vmid == "auto":
             start_id = valid(vm.get("startid"), 200)
             vmid = self._get_new_id(start_id)
-        cfg = Config(config_path)
+        cfg = Config(f"{config_dir}/vmsetup.cfg")
         cfg.update_from_args(vm)
         self._create_disk(cfg, node, vmid)
 
@@ -71,29 +71,6 @@ class ProxmoxAPI:
                              f"--scsihw virtio-scsi-pci")
         else:
             errlog.error(f"Machine {node}.{vmid} is already exists")
-
-    def _add_user_data(self, vmname, vmid, network):
-        ip_address = self.client.execute(
-            f"ip_seeker {network} --binded ~/binded.ip --reverse true")
-
-        if not re.findall("[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}", ip_address):
-            raise BaseException(
-                f"IP address have not been got correctly in network {network}")
-        byte = ip_address.split('.')
-
-        iface = network_settings["network"]["ethernets"]["ens18"]
-        iface["addresses"] = [f"{byte[0]}.{byte[1]}.{byte[2]}.{byte[3]}/24"]
-        iface["gateway4"] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
-        iface["nameservers"]["addresses"][0] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
-
-        autoinstall = ubuntu_autoinstall_config["autoinstall"]
-        autoinstall["identity"]["hostname"] = vmname
-        autoinstall["network"] = network_settings
-
-        user_data_string = yaml.dump(
-            ubuntu_autoinstall_config, sort_keys=False)
-        self.client.execute(
-            f"echo -e '#cloud-config\n{user_data_string}' > /snippets/snippets/user-data-{vmid}")
 
     def clone(self, **vm):
         node = vm.get("node")
@@ -251,3 +228,28 @@ class ProxmoxAPI:
         for qemu in qemus:
             ids.append(qemu['vmid'])
         return ids
+
+    def _get_free_ip_bytes(self, network) -> list:
+        ip_address = self.client.execute(
+            f"ip_seeker {network} --binded ~/binded.ip --reverse true")
+        if not re.findall("[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}", ip_address):
+            raise BaseException(
+                f"IP address have not been got correctly in network {network}")
+        return ip_address.split('.')
+
+    def _add_user_data(self, vmname, vmid, network):
+        autoinstall = ubuntu_autoinstall_config["autoinstall"]
+        autoinstall["identity"]["hostname"] = vmname
+        if network:
+            byte = self._get_free_ip_bytes(network)
+            iface = network_settings["network"]["ethernets"]["ens18"]
+            iface["addresses"] = [
+                f"{byte[0]}.{byte[1]}.{byte[2]}.{byte[3]}/24"]
+            iface["gateway4"] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
+            iface["nameservers"]["addresses"][0] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
+            autoinstall["network"] = network_settings
+
+        user_data_string = yaml.dump(
+            ubuntu_autoinstall_config, sort_keys=False)
+        self.client.execute(
+            f"echo -e '#cloud-config\n{user_data_string}' > /snippets/snippets/user-data-{vmid}")

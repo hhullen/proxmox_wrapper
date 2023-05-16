@@ -1,5 +1,6 @@
 from environs import Env
 import logging
+import yaml
 import sys
 import os
 
@@ -28,8 +29,8 @@ _warn_handler = logging.StreamHandler(sys.stderr)
 _warn_handler.setFormatter(_warn_format)
 warnlog.addHandler(_warn_handler)
 
-
-config_path = f"/home/{os.getenv('USER')}/.proxapi/vmsetup.cfg"
+home = os.path.expanduser("~")
+config_dir = f"{home}/.proxapi"
 
 
 try:
@@ -42,7 +43,7 @@ except:
 
 try:
     env: Env = Env()
-    env.read_env(config_path)
+    env.read_env(f"{config_dir}/vmsetup.cfg")
     HOST = env("PROXMOX_HOST")
     USER = env("USER_NAME")
 except:
@@ -72,7 +73,7 @@ class Config:
         self.node_storage_name: str = env("NODE_STORAGE_NAME")
         self.brigde: str = env("BRIDGE")
         self.firewall: str = env("FIREWALL")
-        self.network: str = env("NETWORK")
+        self.network: str = ""
 
     def update_from_args(self, args: dict[str, any]):
         self.name = valid(args.get("vmname"), self.name)
@@ -85,20 +86,25 @@ class Config:
         self.network = valid(args.get("network"), self.network)
 
 
-_custom_commands = ['echo "@reboot root /bin/bash /root/autoinit/init_script" > /target/etc/cron.d/autoinit',
-                    'chmod 755 /target/etc/cron.d/autoinit']
+try:
+    with open(f"{config_dir}/user-data") as file:
+        ubuntu_autoinstall_config = yaml.safe_load(file)
+except:
+    warnlog.warning("Cannot load user-data file. Default config is set.")
+    _custom_commands = ['echo "@reboot root /bin/bash /root/autoinit/init_script" > /target/etc/cron.d/autoinit',
+                        'chmod 755 /target/etc/cron.d/autoinit']
+    ubuntu_autoinstall_config = {'autoinstall': {'version': 1,
+                                                 'identity': {'realname': 'ubuntu',
+                                                              'hostname': 'new-qemu',
+                                                              'password': '$1$OjcU1ha7$uFbuvRnUwvRcme9Xy3n3L1',
+                                                              'username': 'ubuntu'},
+                                                 'locale': 'en_US.UTF-8',
+                                                 'refresh-installer': {'update': False},
+                                                 'storage': {'layout': {'name': 'lvm'}},
+                                                 'ssh': {'install-server': False},
+                                                 'network': None,
+                                                 'late-commands': _custom_commands}}
 
-ubuntu_autoinstall_config = {'autoinstall': {'version': 1,
-                                             'identity': {'realname': 'ubuntu',
-                                                          'hostname': 'new-qemu',
-                                                          'password': '$1$x5sq4Q1q$ZfK1b8yP6w/xaOltaimCF0',
-                                                          'username': 'ubuntu'},
-                                             'locale': 'en_US.UTF-8',
-                                             'refresh-installer': {'update': False},
-                                             'storage': {'layout': {'name': 'lvm'}},
-                                             'ssh': {'install-server': False},
-                                             'network': None,
-                                             'late-commands': _custom_commands}}
 
 network_settings = {"network": {"version": 2,
                                 "renderer": "networkd",

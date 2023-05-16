@@ -3,7 +3,6 @@ autoinstall:
   version: 1
   identity:
     realname: ubuntu
-    hostname: ubuntu-host
     password: $1$OjcU1ha7$uFbuvRnUwvRcme9Xy3n3L1
     username: ubuntu
   locale: en_US.UTF-8

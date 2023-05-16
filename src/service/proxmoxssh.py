@@ -1,6 +1,6 @@
-from configuration import infolog, warnlog
 from paramiko.channel import ChannelFile, ChannelStderrFile
 from paramiko import SSHClient, SSHException
+from configuration import infolog, warnlog
 import json
 
 

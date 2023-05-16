@@ -45,6 +45,7 @@ depedencies:
 install: uninstall clean depedencies
 	$(MAKEDIR) -p ~$(SEP).proxapi
 	$(COPY) configuration$(SEP)vmsetup.cfg ~$(SEP).proxapi$(SEP)vmsetup.cfg
+	$(COPY) configuration$(SEP)user-data ~$(SEP).proxapi$(SEP)user-data
 	python3 -m PyInstaller --noconfirm --onefile --console --name $(EXECUTABLE) main.py
 
 uninstall:

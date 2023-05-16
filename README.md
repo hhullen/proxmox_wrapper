@@ -1,5 +1,5 @@
 # ProxmoxAPI Command Line Interface
-Proxmox wrapper on `proxmoxer` Python library. Implements a simple command line interface to manage vitrual machines on Proxmox cluster. `Written predominantly for Linux`.
+Proxmox wrapper on `proxmoxer` Python library. Implements a simple command line interface to manage vitrual machines on Proxmox cluster. `Predominantly for Linux`.
 
 # Initial setting
 > To setup configuration installed `Python3` is required.
@@ -58,21 +58,22 @@ SIZE_IDE2="1900M"
     3. `Machine id `- identifier of VM the action excecutes with. In case `status` command called, it can take value `all` to show information from all node VMs. In case `create` command called, it can take value `auto` to create new vm with any free id (start searching free id from 200 by default).
 
 - Optional arguments - can be specified with defifinite flag:
-    2. `--start-id [id]` - set start VM id value which the next free id will be chosen after (to clone or create any vm)
-    3. `--vm-name [vm-name]` - name to new created VM
-    4. `--ram [ram]` - RAM memory. Specify just a number without units which is MiB by default.
-    5. `--sockets [sockets]` - VM sockets amount
-    6. `--cores [cores]` - VM cores amount
-    7. `--vm-disk-size [vm disk zise]` - VM disk size. Specify just a number without units which is GB by default.
-    8. `--node-storage-name [node storage name]` - existing storage name of node for specify where to create new disk for new VM.
-    9. `--help`, `-h` - to ges short description
+    2. `--start-id [id]` - set start VM id value which the next free id will be chosen after (to clone or create any vm)  
+    3. `--vm-name [vm-name]` - name to new created VM  
+    4. `--ram [ram]` - RAM memory. Specify just a number without units which is MiB by default.  
+    5. `--sockets [sockets]` - VM sockets amount  
+    6. `--cores [cores]` - VM cores amount  
+    7. `--vm-disk-size [vm disk zise]` - VM disk size. Specify just a number without units which is GB by default.  
+    8. `--node-storage-name [node storage name]` - existing storage name of node for specify where to create new disk for new VM.  
+    9. `--help`, `-h` - to ges short description  
+    10. `--network` - to setup qemu guest agent network
 
 >> In case some optional arguments was not specified, defaul values will be set instead from config file `~/.proxapi/vmsetup.cfg`
 
 # Some using examples
 ```
 proxapi create pve3 203 --vm-name "test-name-1" --ram 4096 \
---sockets 2 --cores 2 --vm-disk-size 40
+--sockets 2 --cores 2 --vm-disk-size 40 --network 10.10.11.15/24
 ```
 ```
 proxapi start pve3 203
