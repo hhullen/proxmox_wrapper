@@ -17,9 +17,6 @@ def read_args() -> Namespace:
                         metavar="[machine id]",
                         help="machine identifier")
 
-    parser.add_argument("--clone-name", type=str,
-                        metavar="[name]",
-                        help="clone name")
     parser.add_argument("--start-id", type=int,
                         metavar="[id]",
                         help="id which new id searching will be starting from")

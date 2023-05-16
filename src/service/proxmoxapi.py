@@ -28,6 +28,10 @@ class ProxmoxAPI:
         node, vmid = vm.get("node"), vm.get("vmid")
         cfg = Config(f"{config_dir}/vmsetup.cfg")
         cfg.update_from_args(vm)
+
+        ide0 = f"--ide0 file={cfg.ide1},media=cdrom" if cfg.ide1 else ""
+        ide1 = f"--ide1 file={cfg.ide2},media=cdrom" if cfg.ide2 else ""
+
         if self._is_vm_exists(node, vmid):
             self.client.post(f"/nodes/{node}/qemu/{vmid}/config "
                              f"--name {cfg.name} "
@@ -35,8 +39,8 @@ class ProxmoxAPI:
                              f"--memory {cfg.ram} "
                              f"--cores {cfg.cores} "
                              f"--sockets {cfg.sockets} "
-                             f"--ide1 file={cfg.ide1},media=cdrom,size={cfg.size_ide1} "
-                             f"--ide0 file={cfg.ide2},media=cdrom,size={cfg.size_ide2} "
+                             f"{ide0} "
+                             f"{ide1} "
                              f"--scsi0 {cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G "
                              f"--net0 model=virtio,bridge={cfg.brigde},firewall={cfg.firewall} "
                              f"--scsi0 file=local-lvm:cloudinit "
@@ -52,6 +56,9 @@ class ProxmoxAPI:
         cfg = Config(f"{config_dir}/vmsetup.cfg")
         cfg.update_from_args(vm)
         self._create_disk(cfg, node, vmid)
+
+        ide0 = f"--ide0 file={cfg.ide1},media=cdrom" if cfg.ide1 else ""
+        ide1 = f"--ide1 file={cfg.ide2},media=cdrom" if cfg.ide2 else ""
 
         if not self._is_vm_exists(node, vmid):
             self._add_user_data(cfg.name, vmid, cfg.network)
@@ -72,7 +79,8 @@ class ProxmoxAPI:
                              f"--memory {cfg.ram} "
                              f"--cores {cfg.cores} "
                              f"--sockets {cfg.sockets} "
-                             f"--ide0 file={cfg.ide2},media=cdrom,size={cfg.size_ide2} "
+                             f"{ide0} "
+                             f"{ide1} "
                              f"--sata0 file={cfg.node_storage_name}:vm-{vmid}-disk-0,size={cfg.vm_disk_size}G "
                              f"--net0 model=virtio,bridge={cfg.brigde},firewall={cfg.firewall} "
                              f"--scsi0 file=local-lvm:cloudinit "
@@ -93,7 +101,7 @@ class ProxmoxAPI:
 
     def delete(self, **vm):
         node, vmid = vm.get("node"), vm.get("vmid")
-        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
+        response = self._get_current_status(node, vmid)
         if response['status'] != "stopped":
             infolog.info(f"Terminating: {node}.{vmid}")
             response = self.client.post(
@@ -105,7 +113,7 @@ class ProxmoxAPI:
 
     def start(self, **vm):
         node, vmid = vm.get("node"), vm.get("vmid")
-        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
+        response = self._get_current_status(node, vmid)
         if response['status'] == "stopped":
             self.client.post(f"/nodes/{node}/qemu/{vmid}/status/start")
         else:
@@ -113,7 +121,7 @@ class ProxmoxAPI:
 
     def stop(self, **vm):
         node, vmid = vm.get("node"), vm.get("vmid")
-        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
+        response = self._get_current_status(node, vmid)
         if response['status'] != "stopped":
             response = self.client.post(
                 f"/nodes/{node}/qemu/{vmid}/status/stop")
@@ -143,7 +151,7 @@ class ProxmoxAPI:
             self._print_vm_status(node, vmid)
 
     def _print_vm_status(self, node, vmid):
-        response = self.client.get(f"nodes/{node}/qemu/{vmid}/status/current")
+        response = self._get_current_status(node, vmid)
         uptime = datetime.fromtimestamp(
             int(response['uptime'])) - datetime.fromtimestamp(0)
         status = f"{response['status']} LOCKED" if response.get(
@@ -205,12 +213,11 @@ class ProxmoxAPI:
         return len(list(filter(lambda name: f"vm-{name}" == new_disk_name, disks))) > 0
 
     def _wait_termination(self, node: str, vmid: str, timeout: int):
-        response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
+        response = self._get_current_status(node, vmid)
         while response['status'] != "stopped" and timeout:
             timeout -= 1
             time.sleep(1)
-            response = self.client.get(
-                f"/nodes/{node}/qemu/{vmid}/status/current")
+            response = self._get_current_status(node, vmid)
 
     def _get_new_id(self, start):
         nodes = self.client.get("/nodes")
@@ -257,3 +264,6 @@ class ProxmoxAPI:
             ubuntu_autoinstall_config, sort_keys=False)
         self.client.execute(
             f"echo -e '#cloud-config\n{user_data_string}' > /snippets/snippets/user-data-{vmid}")
+
+    def _get_current_status(self, node, vmid):
+        return self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")

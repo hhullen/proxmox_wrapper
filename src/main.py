@@ -10,7 +10,6 @@ def main():
     if modes.get(args.mode):
         modes[args.mode](node=args.node,
                          vmid=args.id,
-                         clonename=args.clone_name,
                          startid=args.start_id,
                          vmname=args.vm_name,
                          ram=args.ram,
