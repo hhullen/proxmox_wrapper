@@ -13,9 +13,19 @@ class ProxmoxAPI:
                                        user=user,
                                        password=password)
 
-    def configurate(self, **vm):
+    def get(self, **vm):
         node = vm.get("node")
-        vmid = vm.get("vmid")
+        info_type = vm.get("vmid")
+        if info_type == "id-list":
+            vm_list = self._get_node_vm_list(node)
+            print(f"VM list on {node}:")
+            for item in vm_list:
+                print(item)
+        else:
+            raise BaseException(f"unknown type {info_type}")
+
+    def configurate(self, **vm):
+        node, vmid = vm.get("node"), vm.get("vmid")
         cfg = Config(f"{config_dir}/vmsetup.cfg")
         cfg.update_from_args(vm)
         if self._is_vm_exists(node, vmid):
@@ -35,8 +45,7 @@ class ProxmoxAPI:
             errlog.error(f"Machine {node}.{vmid} does not exists")
 
     def create(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         if vmid == "auto":
             start_id = valid(vm.get("startid"), 200)
             vmid = self._get_new_id(start_id)
@@ -73,8 +82,7 @@ class ProxmoxAPI:
             errlog.error(f"Machine {node}.{vmid} is already exists")
 
     def clone(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         startid = valid(vm.get("startid"), 200)
         newid = self._get_new_id(startid)
         clonename = valid(vm.get("vmname"), f"clone-{newid}")
@@ -84,8 +92,7 @@ class ProxmoxAPI:
                          f"--full 1")
 
     def delete(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
         if response['status'] != "stopped":
             infolog.info(f"Terminating: {node}.{vmid}")
@@ -97,8 +104,7 @@ class ProxmoxAPI:
         response = self.client.delete(f"/nodes/{node}/qemu/{vmid}")
 
     def start(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
         if response['status'] == "stopped":
             self.client.post(f"/nodes/{node}/qemu/{vmid}/status/start")
@@ -106,8 +112,7 @@ class ProxmoxAPI:
             errlog.error(f"Machine is already started!")
 
     def stop(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         response = self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")
         if response['status'] != "stopped":
             response = self.client.post(
@@ -117,22 +122,19 @@ class ProxmoxAPI:
             errlog.error(f"Machine is not running!")
 
     def reboot(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         response = self.client.post(
             f"/nodes/{node}/qemu/{vmid}/status/reset")
         infolog.info(f"Reboot machine: {response}")
 
     def rebuild(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         self.delete(node=node, vmid=vmid)
         time.sleep(2)
         self.create(node=node, vmid=vmid)
 
     def status(self, **vm):
-        node = vm.get("node")
-        vmid = vm.get("vmid")
+        node, vmid = vm.get("node"), vm.get("vmid")
         if vmid == "all":
             ids = self._get_node_vm_list(node)
             for id in ids:
@@ -162,10 +164,9 @@ class ProxmoxAPI:
                 print(f"Name:\t{valid(item.get('name'), None)}")
                 print(f"Mac:\t{valid(item.get('hardware-address'), None)}")
                 for addr in valid(item.get('ip-addresses'), []):
-                    print(
-                        f"\t{valid(addr.get('ip-address-type'), None)}:"
-                        f"\t{valid(addr.get('ip-address'), None)}/"
-                        f"{valid(addr.get('prefix'), None)}")
+                    print(f"\t{valid(addr.get('ip-address-type'), None)}:"
+                          f"\t{valid(addr.get('ip-address'), None)}/"
+                          f"{valid(addr.get('prefix'), None)}")
         except:
             warnlog.warning(f"No QEMU guest agent configured on {node}.{vmid}")
 
@@ -187,9 +188,12 @@ class ProxmoxAPI:
 
     def _delete_disk(self, cfg: Config, node, vmid):
         disk_name: str = f"vm-{vmid}-disk-0"
+        cloud_init_disk: str = f"vm-{vmid}-cloudinit"
         if self._is_disk_exists(cfg, disk_name, node):
             self.client.delete(
                 f"/nodes/{node}/storage/{cfg.node_storage_name}/content/{disk_name}")
+            self.client.delete(
+                f"/nodes/{node}/storage/{cfg.node_storage_name}/content/{cloud_init_disk}")
 
     def _is_disk_exists(self, cfg: Config, new_disk_name, node) -> bool:
         disks: list = self.client.get(

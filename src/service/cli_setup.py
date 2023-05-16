@@ -9,7 +9,7 @@ def read_args() -> Namespace:
                             "machines on Proxmox cluster.")
     parser.add_argument("mode", type=str,
                         metavar="[action mode]",
-                        help="Available: create/delete/start/stop/reboot/config/status/clone")
+                        help="Available: get/create/delete/start/stop/reboot/config/status/clone")
     parser.add_argument("node", type=str,
                         metavar="[node name]",
                         help="cluster node name")
@@ -58,4 +58,5 @@ def init_modes(proxmox: ProxmoxAPI):
     modes["status"] = proxmox.status
     modes["clone"] = proxmox.clone
     modes["rebuild"] = proxmox.rebuild
+    modes["get"] = proxmox.get
     return modes
