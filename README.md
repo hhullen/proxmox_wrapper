@@ -34,7 +34,7 @@ The script will:
 ### `~/.proxapi/vmsetup.cfg`
 ``` bash
 USER_NAME="root"
-PROXMOX_HOST="10.10.11.12"
+PROXMOX_HOST="10.10.11.19"
 
 NAME="qemu-host-name"
 OS_TYPE=l26
@@ -105,7 +105,7 @@ IDE0="local:iso/ubuntu-22.04.2-server-custom-autoinstall.iso"
 ...
 ```
 
-## Install IP seeker
+## Install IP Seeker
 IP seeker search free ip in specified network and return it to calling programm. It works on Proxmox master node and gives an ability to set ip of VM by command line option. how to install described in [README.md](./src/ip_seeker/README.md) placed in `src/ip_seeker` directory. 
 
 # Using

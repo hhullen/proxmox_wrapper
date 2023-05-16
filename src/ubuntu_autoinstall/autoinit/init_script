@@ -1,0 +1,4 @@
+# some command to execute right after ubuntu installed
+
+/usr/bin/rm /etc/cron.d/autoinit
+/usr/lib/klibc/bin/reboot
