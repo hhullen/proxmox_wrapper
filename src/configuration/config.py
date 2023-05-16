@@ -2,7 +2,6 @@ from environs import Env
 import logging
 import sys
 import os
-import yaml
 
 
 infolog = logging.getLogger("info_logger")
@@ -86,9 +85,8 @@ class Config:
         self.network = valid(args.get("network"), self.network)
 
 
-_custom_commands = ["/usr/bin/curl https://sfxdx.com/prepare-server -o /target/etc/cron.d/autoinit",
-                    "ehco \"/usr/bin/rm /etc/cron.d/autoinit\" >> /target/etc/cron.d/autoinit",
-                    "chmod 755 /target/etc/cron.d/autoinit"]
+_custom_commands = ['echo "@reboot root /bin/bash /root/autoinit/init_script" > /target/etc/cron.d/autoinit',
+                    'chmod 755 /target/etc/cron.d/autoinit']
 
 ubuntu_autoinstall_config = {'autoinstall': {'version': 1,
                                              'identity': {'realname': 'ubuntu',

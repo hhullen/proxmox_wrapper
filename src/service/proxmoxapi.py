@@ -1,70 +1,10 @@
 from configuration import Config, config_path, valid, errlog, infolog, warnlog
-from paramiko.channel import ChannelFile, ChannelStderrFile
 from configuration import ubuntu_autoinstall_config, network_settings
-from paramiko import SSHClient, SSHException
+from .proxmoxssh import ProxmoxSSHClient
 from datetime import datetime
 import time
-import json
 import yaml
 import re
-
-
-class ProxmoxSSHClient():
-    def __init__(self, host: str, user: str, password: str):
-        self.client = SSHClient()
-        self.client.load_system_host_keys()
-        self.client.connect(hostname=host,
-                            username=user,
-                            password=password)
-
-    def __del__(self):
-        self.client.close()
-
-    def execute(self, cmd: str) -> str:
-        sstdin, stdout, stderr = self.client.exec_command(cmd)
-        self._handle_stderr(stderr)
-        return self._handle_stdout(stdout)
-
-    def get(self, api_path: str) -> dict | list:
-        return self._request(api_path, "get")
-
-    def post(self, api_path: str) -> dict | list:
-        return self._request(api_path, "create")
-
-    def put(self, api_path: str) -> dict | list:
-        return self._request(api_path, "set")
-
-    def delete(self, api_path: str) -> dict | list:
-        return self._request(api_path, "delete")
-
-    def _request(self, api_path: str, method: str) -> dict | list | str:
-        sstdin, stdout, stderr = self.client.exec_command(
-            f"pvesh {method} {api_path} --output-format json")
-        self._handle_stderr(stderr)
-        return self._handle_stdout(stdout)
-
-    def _handle_stderr(self, stderr: ChannelStderrFile):
-        stderr: str = stderr.read().decode('utf-8')
-        if "WARNING" in stderr:
-            self._handle_output(stderr)
-        elif stderr:
-            raise SSHException(stderr)
-
-    def _handle_stdout(self, stdout: ChannelFile):
-        stdout: str = stdout.read().decode("utf-8")
-        try:
-            return json.loads(stdout)
-        except:
-            self._handle_output(stdout)
-            return stdout
-
-    def _handle_output(self, output: str):
-        output = output.strip('\n').split('\n')
-        for message in output:
-            if "WARNING" in message:
-                warnlog.warning(message.strip("WARNING: ").strip(' '))
-            elif message:
-                infolog.info(message.strip(' '))
 
 
 class ProxmoxAPI:
@@ -229,14 +169,28 @@ class ProxmoxAPI:
             int(response['uptime'])) - datetime.fromtimestamp(0)
         status = f"{response['status']} LOCKED" if response.get(
             'lock') else response['status']
-        print(f" VM id:\t\t\t{response['vmid']}\n",
-              f"QEMU process status:\t{status}\n",
-              f"VM name:\t\t{response['name']}\n",
-              f"Uptime:\t\t{uptime}\n",
-              f"Maximum usable CPUs:\t{response['cpus']}\n",
-              f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}\n",
-              f"Maximum memory, MB:\t{int(response['maxmem']) / 1024 / 1024}\n",
-              f"Root disk size, MB:\t{int(response['maxdisk']) / 1024 / 1024}\n")
+        print(f"VM id:\t\t\t{response['vmid']}",
+              f"QEMU process status:\t{status}",
+              f"VM name:\t\t{response['name']}",
+              f"Uptime:\t\t\t{uptime}",
+              f"Maximum usable CPUs:\t{response['cpus']}",
+              f"Memory, MB:\t\t{int(response['mem']) / 1024 / 1024}",
+              f"Maximum memory, MB:\t{int(response['maxmem']) / 1024 / 1024}",
+              f"Root disk size, MB:\t{int(response['maxdisk']) / 1024 / 1024}\n", sep='\n')
+        try:
+            response = self.client.get(
+                f"nodes/{node}/qemu/{vmid}/agent/network-get-interfaces")
+            print("QEMU guest agent config:")
+            for item in valid(response.get('result'), []):
+                print(f"Name:\t{valid(item.get('name'), None)}")
+                print(f"Mac:\t{valid(item.get('hardware-address'), None)}")
+                for addr in valid(item.get('ip-addresses'), []):
+                    print(
+                        f"\t{valid(addr.get('ip-address-type'), None)}:"
+                        f"\t{valid(addr.get('ip-address'), None)}/"
+                        f"{valid(addr.get('prefix'), None)}")
+        except:
+            warnlog.warning(f"No QEMU guest agent configured on {node}.{vmid}")
 
     def _is_vm_exists(self, node, vmid) -> bool:
         response = self.client.get(f"/nodes/{node}/qemu")
