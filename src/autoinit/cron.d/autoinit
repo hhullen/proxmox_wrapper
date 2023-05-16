@@ -1,1 +1,0 @@
-@reboot root /bin/bash /root/autoinit/init_script

@@ -9,7 +9,6 @@ Proxmox wrapper on `proxmoxer` Python library. Implements a simple command line 
     - [Upload image](#upload-image)
     - [Install IP seeker](#install-ip-seeker)
 - [Using](#using)  
-    - [Information](#information)  
 - [Some using examples](#some-using-examples)
 
 
@@ -30,6 +29,7 @@ The script will:
 - installs missing python libraries
 - adds alias `proxapi` to init terminal files. So, it is necessary to reload terminal to use `proxapi` command.
 - creates virtual machine configuration file to `~/.proxapi/vmsetup.cfg` and Ubuntu-autoinstall configuration file `~/.porxapi/user-data`.  
+> `Snippets` volume with `snippets` must be created in Proxmox node. The `user-data` file will sent there right before VM is created. For instance, file `/snippets/snippets/user-data-202` will be created for VM with id 202 on Proxmox node.  
 
 ### `~/.proxapi/vmsetup.cfg`
 ``` bash
@@ -44,9 +44,7 @@ SOCKETS=1
 CORES=2
 
 IDE1="local:iso/ubuntu_autounstall.iso"
-SIZE_IDE1="364K"
 IDE2="local:iso/ubuntu-22.04.2-sfxdx-custom.iso"
-SIZE_IDE2="1900M"
 VM_DISK_SIZE=17
 NODE_STORAGE_NAME="VM"
 

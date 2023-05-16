@@ -1,5 +1,5 @@
+from configuration import ubuntu_autoinstall_config, network_settings, snippets_dir
 from configuration import Config, config_dir, valid, errlog, infolog, warnlog
-from configuration import ubuntu_autoinstall_config, network_settings
 from .proxmoxssh import ProxmoxSSHClient
 from datetime import datetime
 import time
@@ -263,7 +263,7 @@ class ProxmoxAPI:
         user_data_string = yaml.dump(
             ubuntu_autoinstall_config, sort_keys=False)
         self.client.execute(
-            f"echo -e '#cloud-config\n{user_data_string}' > /snippets/snippets/user-data-{vmid}")
+            f"echo -e '#cloud-config\n{user_data_string}' > {snippets_dir}/user-data-{vmid}")
 
     def _get_current_status(self, node, vmid):
         return self.client.get(f"/nodes/{node}/qemu/{vmid}/status/current")

@@ -31,6 +31,7 @@ warnlog.addHandler(_warn_handler)
 
 home = os.path.expanduser("~")
 config_dir = f"{home}/.proxapi"
+snippets_dir = "/snippets/snippets"
 
 
 try:
