@@ -43,7 +43,7 @@ RAM_MEMORY=2048
 SOCKETS=1
 CORES=2
 
-IDE1="local:iso/ubuntu-22.04.2-server-custom.iso"
+IDE1="local:iso/ubuntu-22.04.2-server-custom-autoinstall.iso"
 IDE2=
 VM_DISK_SIZE=17
 NODE_STORAGE_NAME="VM"
@@ -136,8 +136,7 @@ IP seeker search free ip in specified network and return it to calling programm.
     6. `--cores [cores]` - VM cores amount  
     7. `--vm-disk-size [vm disk zise]` - VM disk size. Specify just a number without units which is GB by default.  
     8. `--node-storage-name [node storage name]` - existing storage name of node for specify where to create new disk for new VM.  
-    9. `--help`, `-h` - to ges short description  
-    10. `--network` - to setup qemu guest agent network
+    9. `--network` - to setup qemu guest agent network  
 
 >> In case some optional arguments specified they override value took from `~/.proxapi/vmsetup.cfg` and `~/.porxapi/user-data`.
 
