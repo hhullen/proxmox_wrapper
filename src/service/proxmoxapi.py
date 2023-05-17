@@ -175,8 +175,10 @@ class ProxmoxAPI:
                     print(f"\t{valid(addr.get('ip-address-type'), None)}:"
                           f"\t{valid(addr.get('ip-address'), None)}/"
                           f"{valid(addr.get('prefix'), None)}")
+            print()
         except:
-            warnlog.warning(f"No QEMU guest agent configured on {node}.{vmid}")
+            warnlog.warning(
+                f"No QEMU guest agent configured on {node}.{vmid}\n")
 
     def _is_vm_exists(self, node, vmid) -> bool:
         response = self.client.get(f"/nodes/{node}/qemu")
