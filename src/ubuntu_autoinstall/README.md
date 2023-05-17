@@ -27,4 +27,11 @@ The manual is intended to use for official Ubuntu image being edited with `Custo
 - Then press `Next`, stay choosen `gzip` as optimal and press `Generate`.
 - New image will be built in the same directory
 
+## No Cloudinit
+In case installation without cloud init, the image with installation configuration can be build. Run command:
+```
+sudo bash create_image.sh
+```
+The `ubuntu_autounstall.iso` will be created. Attach it as cdrom on any ide[n] to run Ubuntu autoinstall.
+
 [Back to main README.md](../../README.md#get-customized-ubuntu-image)
