@@ -43,8 +43,8 @@ RAM_MEMORY=2048
 SOCKETS=1
 CORES=2
 
-IDE1="local:iso/ubuntu_autounstall.iso"
-IDE2="local:iso/ubuntu-22.04.2-sfxdx-custom.iso"
+IDE1="local:iso/ubuntu-22.04.2-server-custom.iso"
+IDE2=
 VM_DISK_SIZE=17
 NODE_STORAGE_NAME="VM"
 
