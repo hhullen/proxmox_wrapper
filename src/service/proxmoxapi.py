@@ -8,10 +8,9 @@ import re
 
 
 class ProxmoxAPI:
-    def __init__(self, host: str, user: str, password: str) -> None:
+    def __init__(self, host: str, user: str) -> None:
         self.client = ProxmoxSSHClient(host=host,
-                                       user=user,
-                                       password=password)
+                                       user=user)
 
     def get(self, **vm):
         node = vm.get("node")

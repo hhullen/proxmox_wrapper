@@ -5,12 +5,11 @@ import json
 
 
 class ProxmoxSSHClient():
-    def __init__(self, host: str, user: str, password: str):
+    def __init__(self, host: str, user: str):
         self.client = SSHClient()
         self.client.load_system_host_keys()
         self.client.connect(hostname=host,
-                            username=user,
-                            password=password)
+                            username=user)
 
     def __del__(self):
         self.client.close()

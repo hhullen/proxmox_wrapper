@@ -1,11 +1,11 @@
-from configuration import HOST, USER, PASSWORD, infolog, errlog
+from configuration import HOST, USER, infolog, errlog
 from service import ProxmoxAPI, init_modes, read_args
 
 
 def main():
     args = read_args()
     infolog.info(f"Request: {args.mode} {args.node} {args.id}")
-    proxmox = ProxmoxAPI(HOST, USER, PASSWORD)
+    proxmox = ProxmoxAPI(HOST, USER)
     modes: dict = init_modes(proxmox)
     if modes.get(args.mode):
         modes[args.mode](node=args.node,

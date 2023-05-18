@@ -35,14 +35,6 @@ snippets_dir = "/snippets/snippets"
 
 
 try:
-    PASSWORD = os.environ['PROX_PASS']
-except:
-    errlog.error(
-        "Enter a password to ProxmoxVE connection as environment "
-        "variable: export PROX_PASS='your_pass_word'")
-    exit()
-
-try:
     env: Env = Env()
     env.read_env(f"{config_dir}/vmsetup.cfg")
     HOST = env("PROXMOX_HOST")
