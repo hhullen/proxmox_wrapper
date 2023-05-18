@@ -87,7 +87,7 @@ class ProxmoxAPI:
                              f"--cicustom user=snippets:snippets/user-data-{vmid} "
                              f"--scsihw virtio-scsi-pci")
         else:
-            errlog.error(f"Machine {node}.{vmid} is already exists")
+            errlog.error(f"Machine {node}.{vmid} already exists")
 
     def clone(self, **vm):
         node, vmid = vm.get("node"), vm.get("vmid")

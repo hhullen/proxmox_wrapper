@@ -1,5 +1,13 @@
 #!/bin/bash
 
+if [[ $USER != "root" ]]; then
+    echo "Root permissions required to run the script."
+    exit 1
+fi
+
+#  python and pip installation
+apt update && apt full-upgrade && apt install python3 python3-pip
+
 #  install missimg packages
 pip3 install -r requirements.txt
 
@@ -9,6 +17,8 @@ if ! [[ -d "/home/$USER/.proxapi" ]]; then
 fi
 cp configuration/vmsetup.cfg /home/$USER/.proxapi/vmsetup.cfg
 echo "VM Configuration file: /home/$USER/.proxapi/vmsetup.cfg"
+cp configuration/user-data /home/$USER/.proxapi/user-data
+echo "Installation configuration file: /home/$USER/.proxapi/user-data"
 
 #  add alias 'proxapi' to init terminal files
 is_alias=`grep proxapi ~/.bashrc`
