@@ -253,12 +253,12 @@ class ProxmoxAPI:
         autoinstall = ubuntu_autoinstall_config["autoinstall"]
         autoinstall["identity"]["hostname"] = vmname
         if network:
-            byte = self._get_free_ip_bytes(network)
+            ip: list = self._get_free_ip_bytes(network)
             iface = network_settings["network"]["ethernets"]["ens18"]
             iface["addresses"] = [
-                f"{byte[0]}.{byte[1]}.{byte[2]}.{byte[3]}/24"]
-            iface["gateway4"] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
-            iface["nameservers"]["addresses"][0] = f"{byte[0]}.{byte[1]}.{byte[2]}.1"
+                f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}/24"]
+            iface["gateway4"] = f"{ip[0]}.{ip[1]}.{ip[2]}.1"
+            iface["nameservers"]["addresses"][0] = f"{ip[0]}.{ip[1]}.{ip[2]}.1"
             autoinstall["network"] = network_settings
 
         user_data_string = yaml.dump(

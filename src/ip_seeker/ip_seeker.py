@@ -53,8 +53,8 @@ def seek_free_address(addresses: list):
     home = os.path.expanduser("~")
     with open(f"{home}/ip_seek.log", "a") as logfile:
         for i in range(0, len(addresses) - 1):
-            cmd_1 = ['ping', addresses[i], '-c', '3']
-            cmd_2 = ['ping', addresses[i + 1], '-c', '3']
+            cmd_1 = ['ping', addresses[i], '-c', '1']
+            cmd_2 = ['ping', addresses[i + 1], '-c', '1']
             code_1 = subprocess.call(cmd_1, stdout=logfile)
             code_2 = subprocess.call(cmd_2, stdout=logfile)
             if code_1 != 0 and code_2 != 0:

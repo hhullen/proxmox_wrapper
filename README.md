@@ -51,7 +51,7 @@ NODE_STORAGE_NAME="VM"
 BRIDGE="vmbr100"
 FIREWALL=1
 
-```    
+```  
 
 ### `~/.porxapi/user-data`
 ``` yaml
@@ -129,6 +129,7 @@ IP seeker search free ip in specified network and return it to calling programm.
     3. `Machine id ` identifier of VM the action excecutes with. In case `status` command called, it can take value `all` to show information from all node VMs. In case `create` command called, it can take value `auto` to create new vm with any free id (start searching free id from 200 by default).
 
 - Optional arguments - can be specified with defifinite flag:
+    1. `--await` - hold the process and await until the installation and setting
     2. `--start-id [id]` - set start VM id value which the next free id will be chosen after (to clone or create any vm)  
     3. `--vm-name [vm-name]` - name to new created VM  
     4. `--ram [ram]` - RAM memory. Specify just a number without units which is MiB by default.  

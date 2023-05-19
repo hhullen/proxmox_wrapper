@@ -41,7 +41,7 @@ try:
     USER = env("USER_NAME")
 except:
     errlog.error("Can not read configuration file for HOST and USER field."
-                 "Try to run bash configure.sh from src folder in source code directory.")
+                 f"Try to fix in {config_dir}/vmsetup.cfg, or reinstall.")
     exit()
 
 
